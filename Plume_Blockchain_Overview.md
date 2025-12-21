@@ -25,7 +25,7 @@ A comprehensive guide to understanding Plume Network, the leading blockchain pla
 
 ### What is Plume?
 
-Plume is a modular Layer 1 (L1) blockchain specifically designed for **Real World Asset Finance (RWAfi)**. It serves as the first full-stack blockchain infrastructure that enables seamless tokenization, management, and trading of real-world assets on-chain. Launched in mid-2025, Plume bridges the gap between traditional finance (TradFi) and decentralized finance (DeFi) by providing a compliant, secure, and scalable platform for bringing real-world assets onto the blockchain.
+Plume is a modular Layer 1 (L1) blockchain specifically designed for **Real World Asset Finance (RWAfi)**. It serves as the first full-stack blockchain infrastructure that enables seamless tokenization, management, and trading of real-world assets on-chain. With its mainnet launched in 2025, Plume bridges the gap between traditional finance (TradFi) and decentralized finance (DeFi) by providing a compliant, secure, and scalable platform for bringing real-world assets onto the blockchain.
 
 ### Mission and Vision
 
@@ -298,7 +298,7 @@ The central hub for all user interactions with the Plume ecosystem.
 
 ### Ecosystem Scale
 
-As of December 2025, Plume has achieved remarkable ecosystem growth:
+Since its mainnet launch in 2025, Plume has achieved remarkable ecosystem growth:
 
 **Key Metrics:**
 
@@ -586,10 +586,10 @@ Whether you're an investor, developer, or just curious about RWA tokenization, h
 | Parameter | Value |
 |-----------|-------|
 | **Network Name** | Plume Network |
-| **RPC URL** | https://rpc.plume.network (check official docs for current) |
-| **Chain ID** | TBD (check official documentation) |
+| **RPC URL** | *See official documentation* |
+| **Chain ID** | *See official documentation* |
 | **Currency Symbol** | PLUME |
-| **Block Explorer** | https://explorer.plume.network |
+| **Block Explorer** | *See official documentation* |
 
 *Note: Visit official documentation for the most current network parameters.*
 
@@ -990,8 +990,7 @@ A business with tokenized receivables:
 **Getting Help:**
 - **Documentation:** Start with official docs
 - **Discord Support:** Community and team support
-- **Email Support:** support@plume.network (check official website)
-- **Developer Support:** dev-support@plume.network (check official website)
+- **Contact:** Visit official website for current support channels
 
 ### Additional Resources
 
