@@ -135,38 +135,37 @@ def rebalance_quiz(input_file='quiz-format.csv', output_file='quiz-format-balanc
             # Shuffle options to make target_answer correct
             old_correct = q['correct_answer']
             
-            # Get all option contents
-            options_content = {
+            # Map original content
+            content_map = {
                 'A': q['option_a'],
                 'B': q['option_b'],
                 'C': q['option_c'],
                 'D': q['option_d']
             }
             
-            # Create a list of all options and shuffle the non-correct ones
-            option_keys = ['A', 'B', 'C', 'D']
+            # Create shuffled mapping: put old correct answer content at target position,
+            # then randomly distribute the other three options to remaining positions
+            all_options = ['A', 'B', 'C', 'D']
+            other_options = [opt for opt in all_options if opt != old_correct]
+            random.shuffle(other_options)
             
-            # Place the correct content at target position
-            result_keys = [None, None, None, None]
-            target_index = ord(target_answer) - ord('A')  # A=0, B=1, C=2, D=3
-            result_keys[target_index] = old_correct
+            # Build new option assignment
+            target_pos = ord(target_answer) - ord('A')  # A=0, B=1, C=2, D=3
+            new_positions = [None] * 4
+            new_positions[target_pos] = old_correct
             
-            # Get the remaining keys (excluding the one we placed)
-            remaining_keys = [k for k in option_keys if k != old_correct]
-            random.shuffle(remaining_keys)
-            
-            # Fill remaining positions
-            remaining_idx = 0
+            # Fill remaining positions with shuffled other options
+            other_idx = 0
             for i in range(4):
-                if result_keys[i] is None:
-                    result_keys[i] = remaining_keys[remaining_idx]
-                    remaining_idx += 1
+                if new_positions[i] is None:
+                    new_positions[i] = other_options[other_idx]
+                    other_idx += 1
             
             # Assign shuffled content to options
-            new_q['option_a'] = options_content[result_keys[0]]
-            new_q['option_b'] = options_content[result_keys[1]]
-            new_q['option_c'] = options_content[result_keys[2]]
-            new_q['option_d'] = options_content[result_keys[3]]
+            new_q['option_a'] = content_map[new_positions[0]]
+            new_q['option_b'] = content_map[new_positions[1]]
+            new_q['option_c'] = content_map[new_positions[2]]
+            new_q['option_d'] = content_map[new_positions[3]]
             new_q['correct_answer'] = target_answer
             
             changes_made.append({

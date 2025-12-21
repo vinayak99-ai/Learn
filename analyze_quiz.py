@@ -8,6 +8,10 @@ import csv
 import sys
 from collections import defaultdict
 
+# Constants
+CSV_HEADER_LINE = 1
+CSV_DATA_START_LINE = 2  # First line of actual data (after header)
+
 def analyze_quiz(filename='quiz-format.csv'):
     """Analyze the quiz file and print detailed statistics."""
     
@@ -99,8 +103,7 @@ def analyze_quiz(filename='quiz-format.csv'):
     
     # Check for very short questions
     short_questions = []
-    # enumerate starts at 2 to match CSV line numbers (accounting for header row)
-    for i, q in enumerate(questions, 2):
+    for i, q in enumerate(questions, CSV_DATA_START_LINE):
         if len(q['question']) < 10:
             short_questions.append((i, q['question']))
     
@@ -116,8 +119,7 @@ def analyze_quiz(filename='quiz-format.csv'):
     # Check for duplicate questions
     question_texts = {}
     duplicates = []
-    # enumerate starts at 2 to match CSV line numbers (accounting for header row)
-    for i, q in enumerate(questions, 2):
+    for i, q in enumerate(questions, CSV_DATA_START_LINE):
         q_text = q['question'].lower().strip()
         if q_text in question_texts:
             duplicates.append((i, question_texts[q_text], q['question']))
