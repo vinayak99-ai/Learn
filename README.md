@@ -34,14 +34,40 @@ Some topics show particularly severe bias:
 - **English Vocabulary**: 65.0% of answers are C
 - **Science Environment**: 65.0% of answers are B
 
-### 🔧 Analysis Tools
+### 🔧 Tools Available
 
+#### 1. Analysis Tool
 Run the analysis script to see detailed statistics:
 ```bash
 python3 analyze_quiz.py
 ```
 
-For a comprehensive report, see [QUIZ_ANALYSIS.md](QUIZ_ANALYSIS.md)
+This tool provides:
+- Detailed answer distribution statistics
+- Topic-wise bias analysis
+- Quality checks (duplicates, short questions)
+- Overall health assessment
+
+#### 2. Rebalancing Tool
+Automatically fix the answer distribution by shuffling options:
+```bash
+# Dry run (preview changes without modifying files)
+python3 rebalance_quiz.py
+
+# Apply changes (creates quiz-format-balanced.csv)
+python3 rebalance_quiz.py --apply
+```
+
+This tool:
+- Changes 123 questions to achieve balanced distribution
+- Creates a new file (doesn't modify original)
+- Maintains question quality while fixing statistical bias
+- Achieves target: ~25% per option (A, B, C, D)
+
+### 📚 Documentation
+
+- [QUIZ_ANALYSIS.md](QUIZ_ANALYSIS.md) - Comprehensive analysis report
+- [QUIZ_IMPROVEMENT_SUGGESTIONS.md](QUIZ_IMPROVEMENT_SUGGESTIONS.md) - Detailed improvement strategies
 
 ### 💡 Recommendations
 
