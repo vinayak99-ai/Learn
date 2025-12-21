@@ -7,9 +7,13 @@ Automatically rebalances quiz answer distribution by shuffling options.
 import csv
 import random
 import sys
+import time
 from collections import defaultdict
 
-def rebalance_quiz(input_file='quiz-format.csv', output_file='quiz-format-balanced.csv', dry_run=True):
+# Constants
+QUESTION_DISPLAY_LENGTH = 50  # Max length for displaying questions in output
+
+def rebalance_quiz(input_file='quiz-format.csv', output_file='quiz-format-balanced.csv', dry_run=True, seed=None):
     """
     Rebalance the quiz by shuffling options to achieve more even distribution.
     
@@ -17,6 +21,7 @@ def rebalance_quiz(input_file='quiz-format.csv', output_file='quiz-format-balanc
         input_file: Input CSV file
         output_file: Output CSV file (only written if dry_run=False)
         dry_run: If True, only show what would be changed without writing
+        seed: Random seed for reproducibility (if None, uses current time)
     """
     
     try:
@@ -35,6 +40,11 @@ def rebalance_quiz(input_file='quiz-format.csv', output_file='quiz-format-balanc
         print("Error: No questions found in file.")
         sys.exit(1)
     
+    # Set random seed
+    if seed is None:
+        seed = int(time.time())
+    random.seed(seed)
+    
     # Analyze current distribution
     current_distribution = {'A': 0, 'B': 0, 'C': 0, 'D': 0}
     for q in questions:
@@ -45,6 +55,7 @@ def rebalance_quiz(input_file='quiz-format.csv', output_file='quiz-format-balanc
     print("=" * 60)
     print(f"\nInput file: {input_file}")
     print(f"Total questions: {len(questions)}")
+    print(f"Random seed: {seed}")
     print(f"Mode: {'DRY RUN (no changes will be saved)' if dry_run else 'LIVE (changes will be saved)'}")
     
     print("\nCurrent distribution:")
@@ -132,27 +143,34 @@ def rebalance_quiz(input_file='quiz-format.csv', output_file='quiz-format-balanc
                 'D': q['option_d']
             }
             
-            # Create a shuffled list of options
+            # Create a list of all options and shuffle the non-correct ones
             option_keys = ['A', 'B', 'C', 'D']
-            random.shuffle(option_keys)
             
-            # Find where the correct answer ended up after shuffle
-            old_correct_index = option_keys.index(old_correct)
-            target_index = option_keys.index(target_answer)
+            # Place the correct content at target position
+            result_keys = [None, None, None, None]
+            target_index = ord(target_answer) - ord('A')  # A=0, B=1, C=2, D=3
+            result_keys[target_index] = old_correct
             
-            # Swap positions to make target_answer the correct one
-            option_keys[old_correct_index], option_keys[target_index] = \
-                option_keys[target_index], option_keys[old_correct_index]
+            # Get the remaining keys (excluding the one we placed)
+            remaining_keys = [k for k in option_keys if k != old_correct]
+            random.shuffle(remaining_keys)
+            
+            # Fill remaining positions
+            remaining_idx = 0
+            for i in range(4):
+                if result_keys[i] is None:
+                    result_keys[i] = remaining_keys[remaining_idx]
+                    remaining_idx += 1
             
             # Assign shuffled content to options
-            new_q['option_a'] = options_content[option_keys[0]]
-            new_q['option_b'] = options_content[option_keys[1]]
-            new_q['option_c'] = options_content[option_keys[2]]
-            new_q['option_d'] = options_content[option_keys[3]]
+            new_q['option_a'] = options_content[result_keys[0]]
+            new_q['option_b'] = options_content[result_keys[1]]
+            new_q['option_c'] = options_content[result_keys[2]]
+            new_q['option_d'] = options_content[result_keys[3]]
             new_q['correct_answer'] = target_answer
             
             changes_made.append({
-                'question': q['question'][:50] + '...' if len(q['question']) > 50 else q['question'],
+                'question': q['question'][:QUESTION_DISPLAY_LENGTH] + '...' if len(q['question']) > QUESTION_DISPLAY_LENGTH else q['question'],
                 'old_answer': old_correct,
                 'new_answer': target_answer,
                 'topic': q['topic']
@@ -203,19 +221,32 @@ def rebalance_quiz(input_file='quiz-format.csv', output_file='quiz-format-balanc
     print("\n" + "=" * 60)
 
 if __name__ == "__main__":
-    # Set random seed for reproducibility
-    random.seed(42)
-    
     # Check for --apply flag
     dry_run = '--apply' not in sys.argv
+    
+    # Check for custom seed
+    seed = None
+    for arg in sys.argv:
+        if arg.startswith('--seed='):
+            try:
+                seed = int(arg.split('=')[1])
+            except ValueError:
+                print("Error: --seed must be followed by an integer")
+                sys.exit(1)
     
     if '--help' in sys.argv or '-h' in sys.argv:
         print("Quiz Rebalancing Tool")
         print("\nUsage:")
-        print(f"  python3 {sys.argv[0]}           # Dry run (show changes without applying)")
-        print(f"  python3 {sys.argv[0]} --apply   # Apply changes and create balanced file")
+        print(f"  python3 {sys.argv[0]}                    # Dry run (show changes without applying)")
+        print(f"  python3 {sys.argv[0]} --apply            # Apply changes and create balanced file")
+        print(f"  python3 {sys.argv[0]} --seed=42 --apply  # Apply with specific random seed")
+        print("\nOptions:")
+        print("  --apply         Apply changes and create output file")
+        print("  --seed=N        Use specific random seed for reproducibility (optional)")
+        print("  --help, -h      Show this help message")
         print("\nThis tool rebalances quiz answer distribution by shuffling options.")
         print("Original file is never modified directly - a new file is created.")
+        print("Random seed is displayed in output for reproducibility.")
         sys.exit(0)
     
-    rebalance_quiz(dry_run=dry_run)
+    rebalance_quiz(dry_run=dry_run, seed=seed)

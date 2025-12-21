@@ -99,7 +99,7 @@ def analyze_quiz(filename='quiz-format.csv'):
     
     # Check for very short questions
     short_questions = []
-    # enumerate starts at 2 because CSV line 1 is the header row
+    # enumerate starts at 2 to match CSV line numbers (accounting for header row)
     for i, q in enumerate(questions, 2):
         if len(q['question']) < 10:
             short_questions.append((i, q['question']))
@@ -116,7 +116,7 @@ def analyze_quiz(filename='quiz-format.csv'):
     # Check for duplicate questions
     question_texts = {}
     duplicates = []
-    # enumerate starts at 2 because CSV line 1 is the header row
+    # enumerate starts at 2 to match CSV line numbers (accounting for header row)
     for i, q in enumerate(questions, 2):
         q_text = q['question'].lower().strip()
         if q_text in question_texts:
