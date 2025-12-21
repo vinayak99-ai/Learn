@@ -123,15 +123,32 @@ def rebalance_quiz(input_file='quiz-format.csv', output_file='quiz-format-balanc
         if should_change and target_answer:
             # Shuffle options to make target_answer correct
             old_correct = q['correct_answer']
-            options = ['A', 'B', 'C', 'D']
             
-            # Get the content of current correct answer and target
-            old_correct_content = q[f'option_{old_correct.lower()}']
-            target_content = q[f'option_{target_answer.lower()}']
+            # Get all option contents
+            options_content = {
+                'A': q['option_a'],
+                'B': q['option_b'],
+                'C': q['option_c'],
+                'D': q['option_d']
+            }
             
-            # Swap them
-            new_q[f'option_{old_correct.lower()}'] = target_content
-            new_q[f'option_{target_answer.lower()}'] = old_correct_content
+            # Create a shuffled list of options
+            option_keys = ['A', 'B', 'C', 'D']
+            random.shuffle(option_keys)
+            
+            # Find where the correct answer ended up after shuffle
+            old_correct_index = option_keys.index(old_correct)
+            target_index = option_keys.index(target_answer)
+            
+            # Swap positions to make target_answer the correct one
+            option_keys[old_correct_index], option_keys[target_index] = \
+                option_keys[target_index], option_keys[old_correct_index]
+            
+            # Assign shuffled content to options
+            new_q['option_a'] = options_content[option_keys[0]]
+            new_q['option_b'] = options_content[option_keys[1]]
+            new_q['option_c'] = options_content[option_keys[2]]
+            new_q['option_d'] = options_content[option_keys[3]]
             new_q['correct_answer'] = target_answer
             
             changes_made.append({

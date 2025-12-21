@@ -99,6 +99,7 @@ def analyze_quiz(filename='quiz-format.csv'):
     
     # Check for very short questions
     short_questions = []
+    # enumerate starts at 2 because CSV line 1 is the header row
     for i, q in enumerate(questions, 2):
         if len(q['question']) < 10:
             short_questions.append((i, q['question']))
@@ -106,7 +107,7 @@ def analyze_quiz(filename='quiz-format.csv'):
     if short_questions:
         print(f"\n⚠️  Found {len(short_questions)} question(s) that are very short (<10 characters):")
         for line_num, question in short_questions[:5]:
-            print(f"    Line {line_num}: {question}")
+            print(f"    CSV Line {line_num}: {question}")
         if len(short_questions) > 5:
             print(f"    ... and {len(short_questions) - 5} more")
     else:
@@ -115,6 +116,7 @@ def analyze_quiz(filename='quiz-format.csv'):
     # Check for duplicate questions
     question_texts = {}
     duplicates = []
+    # enumerate starts at 2 because CSV line 1 is the header row
     for i, q in enumerate(questions, 2):
         q_text = q['question'].lower().strip()
         if q_text in question_texts:
@@ -125,7 +127,7 @@ def analyze_quiz(filename='quiz-format.csv'):
     if duplicates:
         print(f"\n⚠️  Found {len(duplicates)} duplicate question(s):")
         for curr_line, orig_line, question in duplicates[:5]:
-            print(f"    Line {curr_line} duplicates line {orig_line}: {question[:50]}...")
+            print(f"    CSV Line {curr_line} duplicates CSV Line {orig_line}: {question[:50]}...")
         if len(duplicates) > 5:
             print(f"    ... and {len(duplicates) - 5} more")
     else:
