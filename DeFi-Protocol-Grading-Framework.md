@@ -571,7 +571,7 @@ Regulatory considerations are increasingly important for long-term viability, es
 
 **Examples:**
 - **dYdX (Score 8):** Geofencing + compliance for institutional products
-- **Tornado Cash (Score 1):** Sanctioned for money laundering concerns
+- **Sanctioned Protocol (Score 1):** Regulatory action due to AML concerns (e.g., platforms used primarily for illicit activity)
 
 ### 8.3 Legal Entity Structure (Sub-weight: 20%)
 
@@ -1073,7 +1073,7 @@ Remember that this framework is a tool to guide analysis, not a substitute for c
 
 This framework is designed to evolve with the DeFi ecosystem. Feedback, suggestions, and contributions are welcome to improve methodology, add new criteria, or adjust weightings based on changing industry standards.
 
-For updates and community discussions, please refer to the repository: [GitHub - vinayak99-ai/Learn]
+For updates and community discussions, please refer to the repository: [GitHub - vinayak99-ai/Learn](https://github.com/vinayak99-ai/Learn)
 
 ---
 
