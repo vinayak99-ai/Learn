@@ -144,7 +144,7 @@ def get_readme(owner, repo, token=None):
     }
     
     if token:
-        headers["Authorization"] = f"token {token}"
+        headers["Authorization"] = f"Bearer {token}"
     
     try:
         response = requests.get(url, headers=headers)
@@ -436,6 +436,7 @@ import sys
 import os
 from datetime import datetime
 from typing import List, Dict, Optional
+from urllib.parse import urlparse
 
 class GitHubReleaseChangelog:
     """Extract and format changes between GitHub releases."""
@@ -457,7 +458,7 @@ class GitHubReleaseChangelog:
         }
         
         if token:
-            self.headers["Authorization"] = f"token {token}"
+            self.headers["Authorization"] = f"Bearer {token}"
     
     def _make_request(self, endpoint: str, params: Dict = None) -> Optional[Dict]:
         """Make a request to the GitHub API."""
@@ -506,7 +507,10 @@ class GitHubReleaseChangelog:
             # Handle annotated tags vs lightweight tags
             if data['object']['type'] == 'tag':
                 # Annotated tag - need to fetch the tag object
-                tag_data = self._make_request(data['object']['url'].replace(self.base_url, ''))
+                tag_url = data['object']['url']
+                parsed_url = urlparse(tag_url)
+                endpoint = parsed_url.path
+                tag_data = self._make_request(endpoint)
                 return tag_data['object']['sha'] if tag_data else None
             else:
                 # Lightweight tag - directly points to commit
