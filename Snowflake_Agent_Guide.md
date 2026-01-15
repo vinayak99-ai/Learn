@@ -1650,7 +1650,7 @@ class RobustSnowflakeAgent(SnowflakeAgent):
     
     def execute_with_timeout(self, sql: str, timeout_seconds: int = 300) -> pd.DataFrame:
         """
-        Execute query with timeout protection.
+        Execute query with timeout protection (cross-platform).
         
         Args:
             sql (str): SQL query
@@ -1659,24 +1659,32 @@ class RobustSnowflakeAgent(SnowflakeAgent):
         Returns:
             pd.DataFrame: Query results
         """
-        import signal
+        import threading
         
-        def timeout_handler(signum, frame):
+        result_container = {'result': None, 'error': None}
+        
+        def execute_query_thread():
+            try:
+                result_container['result'] = self.execute_query(sql)
+            except Exception as e:
+                result_container['error'] = e
+        
+        # Start query execution in a separate thread
+        thread = threading.Thread(target=execute_query_thread)
+        thread.daemon = True
+        thread.start()
+        
+        # Wait for completion with timeout
+        thread.join(timeout=timeout_seconds)
+        
+        if thread.is_alive():
+            logger.error(f"Query timed out after {timeout_seconds} seconds")
             raise TimeoutError(f"Query exceeded {timeout_seconds} seconds")
         
-        # Set timeout alarm
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(timeout_seconds)
+        if result_container['error']:
+            raise result_container['error']
         
-        try:
-            result = self.execute_query(sql)
-            signal.alarm(0)  # Cancel alarm
-            return result
-        except TimeoutError:
-            logger.error(f"Query timed out after {timeout_seconds} seconds")
-            raise
-        finally:
-            signal.alarm(0)
+        return result_container['result']
 
 # Usage example
 with SnowflakeConnection() as sf_conn:
