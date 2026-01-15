@@ -271,7 +271,7 @@ REPOS=(
 )
 
 # Initialize output file
-cat > "$OUTPUT_FILE" << 'EOF'
+cat > "$OUTPUT_FILE" << EOF
 # Combined README Documentation
 
 *Generated on: $(date '+%Y-%m-%d %H:%M:%S')*
@@ -290,7 +290,11 @@ for REPO in "${REPOS[@]}"; do
     echo "Fetching $REPO..."
     
     # Clone repository (shallow clone for speed)
-    git clone --depth 1 "https://github.com/$REPO.git" "$TEMP_DIR/$REPO_NAME" 2>/dev/null
+    if git clone --depth 1 "https://github.com/$REPO.git" "$TEMP_DIR/$REPO_NAME" 2>&1 | grep -v '^Cloning'; then
+        :
+    else
+        echo "  Warning: Failed to clone $REPO" >&2
+    fi
     
     if [ -f "$TEMP_DIR/$REPO_NAME/README.md" ]; then
         echo "## $REPO" >> "$OUTPUT_FILE"
@@ -661,15 +665,16 @@ class GitHubReleaseChangelog:
             
             # Write labeled PRs
             for label in sorted(labeled_prs.keys()):
-                lines.append(f"\n### {label.title()}\n")
+                formatted_label = label.replace('-', ' ').replace('_', ' ').title()
+                lines.append(f"\n### {formatted_label}\n")
                 for pr in labeled_prs[label]:
-                    lines.append(f"- #{pr['number']}: {pr['title']} (@{pr['author']}) [{pr['url']}]\n")
+                    lines.append(f"- #{pr['number']}: {pr['title']} (@{pr['author']}) - {pr['url']}\n")
             
             # Write unlabeled PRs
             if unlabeled_prs:
                 lines.append("\n### Other Changes\n")
                 for pr in unlabeled_prs:
-                    lines.append(f"- #{pr['number']}: {pr['title']} (@{pr['author']}) [{pr['url']}]\n")
+                    lines.append(f"- #{pr['number']}: {pr['title']} (@{pr['author']}) - {pr['url']}\n")
         
         # Commits section
         lines.append("\n## Commits\n")
@@ -846,17 +851,17 @@ The script generates a changelog in the following format:
 
 ### Bug Fixes
 
-- #123: Fix memory leak in cache handler (@developer1) [https://github.com/owner/repo/pull/123]
-- #145: Resolve race condition in async operations (@developer2) [https://github.com/owner/repo/pull/145]
+- #123: Fix memory leak in cache handler (@developer1) - https://github.com/owner/repo/pull/123
+- #145: Resolve race condition in async operations (@developer2) - https://github.com/owner/repo/pull/145
 
 ### Features
 
-- #134: Add support for new API endpoints (@developer3) [https://github.com/owner/repo/pull/134]
-- #156: Implement dark mode support (@developer4) [https://github.com/owner/repo/pull/156]
+- #134: Add support for new API endpoints (@developer3) - https://github.com/owner/repo/pull/134
+- #156: Implement dark mode support (@developer4) - https://github.com/owner/repo/pull/156
 
 ### Other Changes
 
-- #167: Update dependencies (@dependabot) [https://github.com/owner/repo/pull/167]
+- #167: Update dependencies (@dependabot) - https://github.com/owner/repo/pull/167
 
 ## Commits
 
