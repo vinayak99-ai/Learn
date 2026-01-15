@@ -320,6 +320,9 @@ class SnowflakeAgent:
             
         Returns:
             pd.DataFrame: Schema information
+            
+        ⚠️ SECURITY NOTE: In production, validate table_name against
+        allowed identifiers or use parameterized queries to prevent SQL injection.
         """
         if table_name:
             query = f"""
@@ -723,6 +726,8 @@ class OptimizedQueryBuilder:
         query = f"SELECT {', '.join(select_items)} FROM {table}"
         
         # Add WHERE clause
+        # ⚠️ SECURITY NOTE: This example uses string formatting for simplicity
+        # For production use, always use parameterized queries (see section 10)
         if filters:
             conditions = [f"{k} = '{v}'" for k, v in filters.items()]
             query += " WHERE " + " AND ".join(conditions)
@@ -962,6 +967,9 @@ class QueryCache:
             print(f"🗑️ Evicted oldest cache entry")
         
         key = self._generate_key(query, params)
+        # Using copy() to avoid reference issues when original DataFrame is modified
+        # NOTE: This creates memory overhead; for large datasets consider storing
+        # only the reference if DataFrame immutability can be guaranteed
         self.cache[key] = (result.copy(), datetime.now())
         print(f"💾 Cached query result ({len(result)} rows)")
     
@@ -1086,6 +1094,8 @@ class RedisQueryCache:
             cached_data = self.redis_client.get(key)
             if cached_data:
                 # Deserialize DataFrame from pickle
+                # ⚠️ SECURITY NOTE: Only use pickle with trusted data sources
+                # For production, consider using JSON or Parquet for safer serialization
                 df = pickle.loads(cached_data)
                 print(f"✅ Redis cache hit")
                 return df
@@ -1108,6 +1118,8 @@ class RedisQueryCache:
         
         try:
             # Serialize DataFrame with pickle
+            # ⚠️ SECURITY NOTE: For production systems, consider using
+            # result.to_json() or result.to_parquet() for safer serialization
             serialized_data = pickle.dumps(result)
             self.redis_client.setex(key, self.ttl, serialized_data)
             print(f"💾 Cached to Redis (TTL: {self.ttl}s)")
