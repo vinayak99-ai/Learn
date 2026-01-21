@@ -1,0 +1,19 @@
+# Python dependencies for LangChain Image Resizing PDF Workflow
+# 
+# Install with: pip install -r requirements.txt
+#
+
+# Core dependencies for LangChain
+langchain>=0.1.0
+langchain-openai>=0.0.5
+openai>=1.0.0
+
+# Image processing
+Pillow>=10.0.0
+
+# Optional: PDF generation libraries
+reportlab>=4.0.0
+PyPDF2>=3.0.0
+
+# Optional: Additional utilities
+python-dotenv>=1.0.0

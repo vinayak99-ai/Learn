@@ -7,6 +7,7 @@ To keep all learning docs
 2. [GitHub Operations Guide](#github-operations-guide)
    - [Combining README Files from Multiple Repositories](#1-combining-readme-files-from-multiple-repositories)
    - [Using GitHub API to Extract Changes Between Releases](#2-using-github-api-to-extract-changes-between-releases)
+3. [LangChain Image Resizing for PDF Generation](#langchain-image-resizing-for-pdf-generation)
 
 ---
 
@@ -908,4 +909,104 @@ This release includes major improvements to performance and new features...
 - [GitHub CLI Documentation](https://cli.github.com/manual/)
 - [GitHub API Rate Limiting](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)
 - [Creating Personal Access Tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+
+---
+
+## LangChain Image Resizing for PDF Generation
+
+This section demonstrates how to use **LangChain** to orchestrate dynamic image resizing workflows for PDF generation, ensuring proper formatting and avoiding layout destruction caused by oversized images.
+
+### Overview
+
+When generating PDFs programmatically, handling images of varying sizes is a common challenge. Oversized images can:
+- Destroy PDF layouts and formatting
+- Cause content to overflow page boundaries
+- Result in poor visual presentation
+- Create inconsistent document appearance
+
+The solution provided shows how LangChain enables orchestration of image resizing workflows with:
+- Dynamic image processing using Python's Pillow library
+- Layout planning using language models
+- Sequential workflow coordination
+- Modular and scalable architecture
+
+### Key Components
+
+1. **Image Resizing**: Automatic resizing while maintaining aspect ratios
+2. **LangChain Orchestration**: Coordinating multiple processing steps
+3. **Layout Planning**: AI-powered layout decisions for optimal PDF structure
+4. **PDF Generation**: Integration with PDF libraries
+
+### Files and Resources
+
+- **[LangChain_Image_Resizing_PDF_Workflow.md](LangChain_Image_Resizing_PDF_Workflow.md)** - Comprehensive documentation covering:
+  - Problem description and use cases
+  - Complete implementation guide
+  - Code examples with explanations
+  - Best practices and troubleshooting
+  - Real-world applications
+
+- **[langchain_pdf_image_resizer.py](langchain_pdf_image_resizer.py)** - Working Python script demonstrating:
+  - Image processing with PIL/Pillow
+  - Layout planning strategies
+  - Workflow orchestration
+  - Batch processing capabilities
+
+- **[requirements.txt](requirements.txt)** - Python dependencies for the project
+
+### Quick Start
+
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Set up your OpenAI API key:**
+   ```bash
+   export OPENAI_API_KEY="your-api-key-here"
+   ```
+
+3. **Run the example script:**
+   ```bash
+   python3 langchain_pdf_image_resizer.py
+   ```
+
+### Example Usage
+
+```python
+from PIL import Image
+
+def resize_image(image_path, max_width=800):
+    """Resize image while maintaining aspect ratio."""
+    img = Image.open(image_path)
+    if img.size[0] > max_width:
+        scale_factor = max_width / img.size[0]
+        img = img.resize(
+            (max_width, int(img.size[1] * scale_factor)), 
+            Image.LANCZOS
+        )
+    return img
+```
+
+### Benefits
+
+- **Modularity**: Break complex workflows into manageable steps
+- **AI Integration**: Use LLMs for intelligent layout decisions
+- **Quality Preservation**: Proper image resizing maintains visual quality
+- **Scalability**: Handle various document types and sizes
+- **Flexibility**: Easy to extend with additional processing steps
+
+### Use Cases
+
+- Automated report generation with charts and tables
+- Marketing materials and product catalogs
+- Educational content with diagrams
+- Technical documentation with code screenshots
+- Dynamic PDF generation from user-uploaded content
+
+### Additional Documentation
+
+For complete implementation details, code examples, and best practices, see the full documentation:
+- [LangChain_Image_Resizing_PDF_Workflow.md](LangChain_Image_Resizing_PDF_Workflow.md)
+
 
