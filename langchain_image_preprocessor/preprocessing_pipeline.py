@@ -55,20 +55,23 @@ class ImagePreprocessor:
         """
         try:
             # Check if it's a local file or URL
-            is_local_file = os.path.exists(url) or not url.startswith(('http://', 'https://'))
+            is_url = url.startswith(('http://', 'https://'))
             
-            if is_local_file:
+            if is_url:
+                # Download the image from URL
+                print(f"Downloading image from: {url}")
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+                response = requests.get(url, timeout=10, headers=headers)
+                response.raise_for_status()
+                img = Image.open(BytesIO(response.content))
+            else:
                 # Handle local file
                 print(f"Loading local image: {url}")
                 if not os.path.exists(url):
                     raise FileNotFoundError(f"Local image file not found: {url}")
                 img = Image.open(url)
-            else:
-                # Download the image from URL
-                print(f"Downloading image from: {url}")
-                response = requests.get(url, timeout=10)
-                response.raise_for_status()
-                img = Image.open(BytesIO(response.content))
             
             original_size = img.size
             print(f"  Original size: {original_size[0]}x{original_size[1]} pixels")
@@ -89,12 +92,25 @@ class ImagePreprocessor:
             # Generate filename from URL or path
             filename = url.split("/")[-1]
             if not filename or '.' not in filename:
-                filename = f"image_{hash(url)}.jpg"
+                # Use hashlib for consistent unique filenames
+                import hashlib
+                url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+                filename = f"image_{url_hash}.jpg"
             
             save_path = os.path.join(save_dir, filename)
             
-            # Save the image
-            img.save(save_path, quality=self.output_quality)
+            # Convert to RGB if necessary (for PNG with transparency, etc.)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Save the image with explicit format
+            img.save(save_path, format='JPEG', quality=self.output_quality)
             print(f"  Saved to: {save_path}")
             
             final_size = img.size
