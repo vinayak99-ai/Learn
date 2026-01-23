@@ -1535,9 +1535,14 @@ public static void debugImageLoading(String imagePath) {
 - Enable row breaking
 
 ```java
-// Enable row breaking
+// Enable row breaking (verify with your Aspose.PDF version)
+// Example for older versions:
 table.setBroken(TableBroken.VerticalInSamePage);
 table.setRepeatingRowsCount(1); // Repeat header on new pages
+
+// Alternative for newer versions:
+// table.setIsBroken(true);
+// table.setRepeatingRowsCount(1);
 ```
 
 #### 3. Form Fields Not Editable
