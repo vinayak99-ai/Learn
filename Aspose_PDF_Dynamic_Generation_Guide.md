@@ -101,6 +101,9 @@ public class DynamicTableGenerator {
         // Extract column headers from first object
         JSONObject firstRow = data.getJSONObject(0);
         String[] headers = JSONObject.getNames(firstRow);
+        if (headers == null || headers.length == 0) {
+            return null;
+        }
         
         // Calculate optimal column widths based on content
         float[] columnWidths = calculateOptimalColumnWidths(data, headers, document);
@@ -644,14 +647,16 @@ public class DynamicReportGenerator {
     
     private static String formatSectionName(String name) {
         // Convert camelCase or snake_case to Title Case
-        return name.replaceAll("([A-Z])", " $1")
-                  .replaceAll("_", " ")
-                  .trim()
-                  .substring(0, 1).toUpperCase() + 
-               name.replaceAll("([A-Z])", " $1")
-                  .replaceAll("_", " ")
-                  .trim()
-                  .substring(1);
+        if (name == null || name.isEmpty()) {
+            return "";
+        }
+        String formatted = name.replaceAll("([A-Z])", " $1")
+                              .replaceAll("_", " ")
+                              .trim();
+        if (formatted.isEmpty()) {
+            return "";
+        }
+        return formatted.substring(0, 1).toUpperCase() + formatted.substring(1);
     }
     
     private static void addPageNumbering(Document document) {
@@ -1088,7 +1093,6 @@ public class DynamicFormFieldManager {
      * Disable a form field by name
      */
     private static void disableFormField(Document document, String fieldName) {
-        Field field = document.getForm().getFields()[0]; // This is simplified
         for (Field f : document.getForm().getFields()) {
             if (f.getPartialName().equals(fieldName)) {
                 f.setReadOnly(true);
