@@ -1,0 +1,27 @@
+{
+    "title": "Sample PDF",
+    "images": [
+        {
+            "url": "https://example.com/image1.jpg",
+            "alt_text": "Image 1"
+        },
+        {
+            "url": "https://example.com/image2.jpg",
+            "alt_text": "Image 2"
+        }
+    ],
+    "content": [
+        {
+            "type": "text",
+            "value": "Welcome to the Sample PDF document!"
+        },
+        {
+            "type": "table",
+            "headers": ["Year", "Sales"],
+            "rows": [
+                ["2020", "$1M"],
+                ["2021", "$1.5M"]
+            ]
+        }
+    ]
+}

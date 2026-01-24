@@ -1,0 +1,48 @@
+{
+    "title": "Sample PDF",
+    "images": [
+        {
+            "url": "processed_images/image1.jpg",
+            "alt_text": "Image 1",
+            "dimensions": [
+                600,
+                400
+            ]
+        },
+        {
+            "url": "processed_images/image2.jpg",
+            "alt_text": "Image 2",
+            "dimensions": [
+                600,
+                350
+            ]
+        }
+    ],
+    "content": [
+        {
+            "type": "text",
+            "value": "Welcome to the Sample PDF document!"
+        },
+        {
+            "type": "table",
+            "headers": [
+                "Year",
+                "Sales"
+            ],
+            "rows": [
+                [
+                    "2020",
+                    "$1M"
+                ],
+                [
+                    "2021",
+                    "$1.5M"
+                ]
+            ]
+        }
+    ],
+    "layout": {
+        "image_alignment": "center",
+        "page_breaks": []
+    }
+}

@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Processed images (generated files)
+langchain_image_preprocessor/processed_images/*.jpg
+langchain_image_preprocessor/processed_images/*.png
+langchain_image_preprocessor/processed_images/*.jpeg
