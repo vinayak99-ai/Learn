@@ -1,0 +1,25 @@
+# Investment Orchestrator Requirements
+# Core FastAPI and server dependencies
+fastapi==0.109.1  # Updated to fix CVE: ReDoS vulnerability in Content-Type header
+uvicorn[standard]==0.27.0
+
+# LangChain and OpenAI dependencies
+langchain==0.1.0
+langchain-openai==0.0.5
+openai==1.10.0
+
+# HTTP client and async support
+httpx==0.26.0
+
+# Data validation and environment management
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# Testing dependencies
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+
+# Logging and monitoring
+structlog==24.1.0
