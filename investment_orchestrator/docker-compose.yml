@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # Python LangChain Orchestrator Service
+  python-orchestrator:
+    build: .
+    container_name: investment-orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      - JAVA_BACKEND_URL=http://java-backend:8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CACHE_DURATION_MINUTES=${CACHE_DURATION_MINUTES:-5}
+      - MAX_CONCURRENT_REQUESTS=${MAX_CONCURRENT_REQUESTS:-10}
+      - REQUEST_TIMEOUT_SECONDS=${REQUEST_TIMEOUT_SECONDS:-30}
+    depends_on:
+      - java-backend
+    networks:
+      - investment-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Java Backend Service (Reference)
+  # Replace with your actual Java backend image
+  java-backend:
+    image: your-java-backend:latest
+    container_name: java-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+    networks:
+      - investment-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  investment-network:
+    driver: bridge
+
+# Optional: Add volumes for persistence
+volumes:
+  backend-data:

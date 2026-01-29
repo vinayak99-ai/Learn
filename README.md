@@ -9,6 +9,7 @@ To keep all learning docs
    - [Using GitHub API to Extract Changes Between Releases](#2-using-github-api-to-extract-changes-between-releases)
 3. [LangChain Image Resizing for PDF Generation](#langchain-image-resizing-for-pdf-generation)
 4. [Aspose.PDF for Java: Advanced Dynamic PDF Generation](#asposepdf-for-java-advanced-dynamic-pdf-generation)
+5. [Investment Research Orchestrator](#investment-research-orchestrator)
 
 ---
 
@@ -1136,6 +1137,103 @@ This comprehensive document includes:
 ✅ **Scalability**: Handle varying data volumes without manual intervention  
 ✅ **Reduced Development Time**: Programmatic generation is faster than template-based approaches  
 ✅ **Dynamic Adaptability**: Reports automatically adjust to content changes
+
+---
+
+## Investment Research Orchestrator
+
+A comprehensive LangChain-based system that orchestrates multiple Java backend APIs to provide investment research insights through natural language queries. This powerful tool uses GPT-4 to intelligently analyze and combine data from various sources.
+
+### Overview
+
+The Investment Research Orchestrator bridges the gap between natural language questions and complex financial data APIs. Users can ask questions like "Find me high-growth tech stocks under $100" or "Should I buy Tesla or Rivian?", and the system intelligently determines which APIs to call and how to combine the results.
+
+### Key Features
+
+- 🤖 **Natural Language Interface**: Ask investment questions in plain English
+- 📊 **Multi-Source Data Integration**: Combines price, classification, fundamentals, and analyst ratings
+- 🔍 **Intelligent Screening**: Find assets matching complex criteria
+- ⚖️ **Asset Comparison**: Side-by-side analysis of multiple investments
+- 🚀 **High Performance**: Async operations with caching and parallel data fetching
+- 🐳 **Docker Ready**: Easy deployment with Docker and Docker Compose
+
+### Technology Stack
+
+- **FastAPI**: RESTful API server
+- **LangChain**: Agent orchestration framework
+- **OpenAI GPT-4**: Natural language understanding and reasoning
+- **httpx**: Async HTTP client for backend communication
+- **Python 3.11+**: Modern Python with async/await support
+
+### Quick Start
+
+```bash
+# Navigate to the orchestrator directory
+cd investment_orchestrator
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env and add your OPENAI_API_KEY
+
+# Run the service
+cd src
+uvicorn orchestrator:app --reload
+```
+
+Visit http://localhost:8000/docs for interactive API documentation.
+
+### Example Queries
+
+**Simple Queries**:
+- "What's the current price of Apple?"
+- "What sector does Tesla belong to?"
+- "Show me Microsoft's fundamentals"
+
+**Complex Queries**:
+- "Find high-growth tech stocks under $100 with strong analyst ratings"
+- "Compare NVDA, AMD, and INTC across key metrics"
+- "Build me a diversified portfolio across 5 sectors"
+
+### API Endpoints
+
+1. **`POST /research`** - Natural language investment queries
+2. **`POST /compare`** - Direct asset comparison (2-5 assets)
+3. **`POST /screen`** - Screen assets by criteria
+4. **`GET /health`** - Service health check
+
+### Architecture
+
+```
+User Query → FastAPI → LangChain Agent → Tools → Java Backend APIs → Response
+```
+
+The system uses 6 specialized tools:
+1. **GetAssetPrice** - Current price and trading data
+2. **GetAssetClassification** - Sector, industry, market cap
+3. **GetAssetBaskets** - Find assets by criteria
+4. **GetAssetResearchData** - Fundamentals and analyst ratings
+5. **CompareAssets** - Side-by-side comparison
+6. **ScreenAssets** - Comprehensive screening with enriched data
+
+### Documentation
+
+- **[Full Documentation](investment_orchestrator/README.md)** - Complete setup and usage guide
+- **[Example Queries](investment_orchestrator/examples/example_queries.md)** - 14+ detailed query examples
+- **[Java Backend Reference](investment_orchestrator/java_backend_reference/)** - Backend API specifications
+
+### Use Cases
+
+- Investment research and analysis
+- Portfolio construction and optimization
+- Stock screening and filtering
+- Comparative analysis of assets
+- Fundamental analysis automation
+- Educational tool for understanding investments
+
+For detailed implementation, architecture, and API documentation, see the [investment_orchestrator directory](investment_orchestrator/).
 
 ---
 
