@@ -2,6 +2,15 @@
 
 All notable changes to the Investment Research Orchestrator project will be documented in this file.
 
+## [1.0.1] - 2024-01-29
+
+### Security
+- **CRITICAL**: Updated FastAPI from 0.109.0 to 0.109.1 to fix ReDoS vulnerability in Content-Type header parsing (CVE)
+- This vulnerability could allow an attacker to cause denial of service through specially crafted Content-Type headers
+
+### Changed
+- Updated requirements.txt with patched FastAPI version
+
 ## [1.0.0] - 2024-01-29
 
 ### Added

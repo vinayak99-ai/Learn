@@ -313,4 +313,4 @@ See CHANGELOG.md for the complete roadmap including:
 
 **Status**: ✅ Production Ready
 **Version**: 1.0.0
-**Last Updated**: 2024-01-29
+**Last Updated**: 2024-01-29 (v1.0.1 - Security Fix)

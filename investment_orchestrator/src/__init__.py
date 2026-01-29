@@ -5,4 +5,4 @@ by integrating multiple Java backend APIs for asset prices, classifications, bas
 and research data.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"

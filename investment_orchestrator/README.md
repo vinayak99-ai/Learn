@@ -1,5 +1,7 @@
 # Investment Research Orchestrator
 
+> **Security Note**: Version 1.0.1 includes critical security update for FastAPI ReDoS vulnerability (CVE). Always use the latest version.
+
 ## Overview
 
 The Investment Research Orchestrator is a sophisticated system that uses LangChain and OpenAI to intelligently orchestrate multiple Java backend APIs, providing comprehensive investment research insights through natural language queries.

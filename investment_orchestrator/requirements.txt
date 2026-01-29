@@ -1,6 +1,6 @@
 # Investment Orchestrator Requirements
 # Core FastAPI and server dependencies
-fastapi==0.109.0
+fastapi==0.109.1  # Updated to fix CVE: ReDoS vulnerability in Content-Type header
 uvicorn[standard]==0.27.0
 
 # LangChain and OpenAI dependencies
