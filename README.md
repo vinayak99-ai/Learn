@@ -9,6 +9,104 @@ To keep all learning docs
    - [Using GitHub API to Extract Changes Between Releases](#2-using-github-api-to-extract-changes-between-releases)
 3. [LangChain Image Resizing for PDF Generation](#langchain-image-resizing-for-pdf-generation)
 4. [Aspose.PDF for Java: Advanced Dynamic PDF Generation](#asposepdf-for-java-advanced-dynamic-pdf-generation)
+5. [Digital Asset Research Platform (DAP)](#digital-asset-research-platform-dap)
+   - [LLM Use Cases for Research Platform](#llm-use-cases-for-research-platform)
+
+---
+
+## Digital Asset Research Platform (DAP)
+
+### LLM Use Cases for Research Platform
+
+Comprehensive documentation of Large Language Model use cases for the AI-powered Digital Asset Research Platform.
+
+**Key Documents**:
+- **[LLM_Use_Cases_Research_Platform.md](./LLM_Use_Cases_Research_Platform.md)** - Detailed LLM use cases, implementation patterns, and best practices
+- **[DAP_Prod_Reqs.md](./DAP_Prod_Reqs.md)** - Product requirements with enhanced LLM agent capabilities
+- **[DAP_Agile_plan.md](./DAP_Agile_plan.md)** - Agile implementation plan for the platform
+
+#### Overview
+
+The Digital Asset Research Platform leverages Large Language Models (LLMs) to automate and enhance research workflows for digital asset analysis. The platform uses autonomous agents powered by OpenAI, Claude, and Gemini to deliver end-to-end research capabilities.
+
+#### LLM Use Case Categories
+
+1. **Data Aggregation & Normalization**
+   - Multi-source data reconciliation
+   - Unstructured data extraction from news and documents
+   - API response interpretation
+   - Data quality validation
+
+2. **Market Analysis & Insights**
+   - Trend identification and correlation analysis
+   - Comparative protocol analysis
+   - Anomaly detection with explanations
+   - Large-scale sentiment analysis
+
+3. **Automated Report Generation**
+   - Daily market briefs
+   - Weekly and monthly reports
+   - Protocol deep dives
+   - Regulatory update summaries
+   - Portfolio performance reports
+
+4. **Conversational Research Interface**
+   - Natural language data queries
+   - Multi-step analysis through conversation
+   - Ad-hoc report generation
+   - Historical research synthesis
+
+5. **Portfolio Management**
+   - Rebalancing recommendations
+   - Risk assessment and attribution
+   - Performance analysis
+   - What-if scenario modeling
+
+6. **Real-Time Monitoring & Alerts**
+   - Price movement alerts with context
+   - Protocol event monitoring
+   - Smart contract risk alerts
+   - Regulatory news notifications
+
+7. **Knowledge Management**
+   - Research synthesis across reports
+   - Consistency checking
+   - Citation management
+   - Quality assurance
+
+#### Agent Architecture
+
+The platform employs specialized agents:
+- **Data Aggregation Agent**: Pulls and normalizes data from multiple sources
+- **Analysis Agent**: Identifies patterns and generates insights
+- **Report Drafting Agent**: Auto-generates research reports
+- **Monitoring Agent**: Tracks markets and protocols for changes
+- **Alert Agent**: Generates proactive notifications
+- **Conversational Research Agent**: Natural language interface
+- **Rebalancing Agent**: Portfolio optimization recommendations
+
+#### Implementation Highlights
+
+**Model Selection Strategy**:
+- **Premium Models** (GPT-4, Claude Opus, Gemini Ultra): Complex analysis, strategic decisions
+- **Standard Models** (GPT-3.5, Claude Sonnet, Gemini Pro): Daily reports, routine analysis
+- **Fast Models** (GPT-4 Turbo, Claude Haiku): Real-time alerts, classification
+
+**Key Patterns**:
+- Sequential agent chains for report generation
+- Parallel agent execution for complex queries
+- Retrieval-Augmented Generation (RAG) for historical research
+- Human-in-the-loop for critical decisions
+
+**Best Practices**:
+- Prompt engineering with clear specifications
+- Output validation and fact-checking
+- Token optimization and cost management
+- Monitoring and observability
+- Security and compliance measures
+
+For complete details, implementation patterns, and example prompts, see:
+**[LLM_Use_Cases_Research_Platform.md](./LLM_Use_Cases_Research_Platform.md)**
 
 ---
 
