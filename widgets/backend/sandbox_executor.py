@@ -5,6 +5,7 @@ Provides safe execution of user-provided Python code with whitelisted functions
 
 from RestrictedPython import compile_restricted, safe_globals
 from RestrictedPython.Guards import guarded_iter_unpack_sequence, safe_builtins
+from RestrictedPython.Eval import default_guarded_getitem, default_guarded_getiter
 import signal
 import json
 from typing import Dict, Any
@@ -49,7 +50,8 @@ def get_safe_builtins():
         'any': any,
         'all': all,
         '_iter_unpack_sequence_': guarded_iter_unpack_sequence,
-        '_getiter_': iter,
+        '_getiter_': default_guarded_getiter,
+        '_getitem_': default_guarded_getitem,
         '__builtins__': safe_builtins,
     }
     return safe_dict
@@ -131,12 +133,17 @@ def execute_sandboxed_code(code: str, parameters: Dict[str, Any] = None) -> Dict
             mode='exec'
         )
         
-        if byte_code.errors:
+        # In RestrictedPython 7.x, compile_restricted returns a code object or raises SyntaxError
+        # Check if byte_code has errors attribute (older API) or is a code object (new API)
+        if hasattr(byte_code, 'errors') and byte_code.errors:
             return {
                 "success": False,
                 "error": f"Compilation errors: {', '.join(byte_code.errors)}",
                 "data": None
             }
+        
+        # For new API, byte_code is directly the code object
+        code_obj = byte_code.code if hasattr(byte_code, 'code') else byte_code
         
         # Prepare the execution environment
         restricted_globals = get_safe_globals()
@@ -152,7 +159,7 @@ def execute_sandboxed_code(code: str, parameters: Dict[str, Any] = None) -> Dict
             pass
         
         # Execute the code
-        exec(byte_code.code, restricted_globals)
+        exec(code_obj, restricted_globals)
         
         # Cancel the timeout
         try:
