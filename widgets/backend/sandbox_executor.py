@@ -1,6 +1,10 @@
 """
 Sandboxed Python Code Execution using RestrictedPython
 Provides safe execution of user-provided Python code with whitelisted functions
+
+Requirements:
+- RestrictedPython 7.x (tested with 7.4)
+- Python 3.8+
 """
 
 from RestrictedPython import compile_restricted, safe_globals
@@ -127,23 +131,15 @@ def execute_sandboxed_code(code: str, parameters: Dict[str, Any] = None) -> Dict
     
     try:
         # Compile the code with RestrictedPython
+        # RestrictedPython 7.x returns a code object directly
         byte_code = compile_restricted(
             code,
             filename='<inline code>',
             mode='exec'
         )
         
-        # In RestrictedPython 7.x, compile_restricted returns a code object or raises SyntaxError
-        # Check if byte_code has errors attribute (older API) or is a code object (new API)
-        if hasattr(byte_code, 'errors') and byte_code.errors:
-            return {
-                "success": False,
-                "error": f"Compilation errors: {', '.join(byte_code.errors)}",
-                "data": None
-            }
-        
-        # For new API, byte_code is directly the code object
-        code_obj = byte_code.code if hasattr(byte_code, 'code') else byte_code
+        # byte_code is the compiled code object in RestrictedPython 7.x
+        code_obj = byte_code
         
         # Prepare the execution environment
         restricted_globals = get_safe_globals()
