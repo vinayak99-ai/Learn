@@ -20,3 +20,15 @@ ENV/
 langchain_image_preprocessor/processed_images/*.jpg
 langchain_image_preprocessor/processed_images/*.png
 langchain_image_preprocessor/processed_images/*.jpeg
+
+# Angular
+node_modules/
+dist/
+.angular/
+*.ngfactory.ts
+*.ngsummary.json
+*.metadata.json
+
+# Python backend (widgets)
+widgets/backend/venv/
+widgets/backend/__pycache__/

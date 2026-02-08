@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widgets System Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .demo-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .demo-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .widgets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .widget-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .widget-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .widget-header h3 {
+            color: #333;
+            font-size: 20px;
+        }
+
+        .widget-type {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .widget-description {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .widget-content {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            min-height: 100px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .data-display {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .success {
+            color: #27ae60;
+        }
+
+        .error {
+            color: #e74c3c;
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tech-item {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            min-width: 150px;
+        }
+
+        .tech-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .tech-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            padding: 15px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .feature-icon {
+            font-size: 28px;
+        }
+
+        .feature-text {
+            font-weight: 500;
+            color: #333;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Angular Widgets System</h1>
+            <p>Dynamic Python-powered widgets with real-time execution</p>
+        </header>
+
+        <div class="demo-section">
+            <h2>🏗️ Technology Stack</h2>
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <div class="tech-icon">⚡</div>
+                    <div class="tech-name">Angular</div>
+                    <div style="font-size: 12px; color: #666;">TypeScript Frontend</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🐍</div>
+                    <div class="tech-name">FastAPI</div>
+                    <div style="font-size: 12px; color: #666;">Python Backend</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🔒</div>
+                    <div class="tech-name">RestrictedPython</div>
+                    <div style="font-size: 12px; color: #666;">Sandboxed Execution</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">📊</div>
+                    <div class="tech-name">Pandas</div>
+                    <div style="font-size: 12px; color: #666;">Data Processing</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>✨ Key Features</h2>
+            <div class="features-list">
+                <div class="feature-item">
+                    <div class="feature-icon">🔄</div>
+                    <div class="feature-text">Auto-Refresh Widgets</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📈</div>
+                    <div class="feature-text">Multiple Widget Types</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🛡️</div>
+                    <div class="feature-text">Secure Sandbox Execution</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">⚙️</div>
+                    <div class="feature-text">RESTful API</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🎨</div>
+                    <div class="feature-text">Responsive Grid Layout</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">⏱️</div>
+                    <div class="feature-text">Timeout Protection</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📊 Sample Widgets (Live Demo)</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                These widgets fetch data from the Python backend and display it dynamically:
+            </p>
+            <div class="widgets-grid" id="widgetsContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading widgets from backend...</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Built with ❤️ using Angular and FastAPI</p>
+            <p style="font-size: 14px; margin-top: 10px;">
+                View the complete source code in the widgets/ directory
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+
+        async function loadWidgets() {
+            const container = document.getElementById('widgetsContainer');
+            
+            try {
+                // Fetch widget configurations
+                const response = await fetch(`${API_URL}/widgets`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const widgets = await response.json();
+                
+                // Clear loading state
+                container.innerHTML = '';
+                
+                // Create widget cards
+                for (const widget of widgets) {
+                    const card = createWidgetCard(widget);
+                    container.appendChild(card);
+                    
+                    // Execute widget code
+                    executeWidget(widget, card);
+                }
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="widget-card" style="grid-column: 1 / -1;">
+                        <div class="error" style="text-align: center; padding: 40px;">
+                            <h3>❌ Failed to load widgets</h3>
+                            <p style="margin-top: 10px;">${error.message}</p>
+                            <p style="margin-top: 10px; font-size: 14px;">
+                                Make sure the backend is running: <code>cd widgets/backend && python main.py</code>
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function createWidgetCard(widget) {
+            const card = document.createElement('div');
+            card.className = 'widget-card';
+            card.innerHTML = `
+                <div class="widget-header">
+                    <h3>${widget.name}</h3>
+                    <span class="widget-type">${widget.type}</span>
+                </div>
+                <div class="widget-description">${widget.description || ''}</div>
+                <div class="widget-content">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Executing Python code...</p>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        async function executeWidget(widget, card) {
+            const contentDiv = card.querySelector('.widget-content');
+            
+            try {
+                const response = await fetch(`${API_URL}/execute-widget`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        widgetId: widget.id,
+                        pythonCode: widget.pythonCode,
+                        parameters: widget.parameters || {}
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    contentDiv.innerHTML = `
+                        <div class="success">✓ Execution successful (${result.executionTime.toFixed(2)}ms)</div>
+                        <div class="data-display" style="margin-top: 10px;">
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    contentDiv.innerHTML = `
+                        <div class="error">✗ Execution failed</div>
+                        <div class="data-display" style="margin-top: 10px; color: #e74c3c;">
+                            ${result.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `
+                    <div class="error">✗ Request failed</div>
+                    <div class="data-display" style="margin-top: 10px; color: #e74c3c;">
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Load widgets on page load
+        window.addEventListener('DOMContentLoaded', loadWidgets);
+    </script>
+</body>
+</html>

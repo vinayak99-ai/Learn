@@ -1,0 +1,59 @@
+<div class="widget-container">
+  <div class="widget-header">
+    <h3>{{ config.name }}</h3>
+    <button class="refresh-btn" (click)="refresh()" [disabled]="loading">
+      <span *ngIf="!loading">🔄</span>
+      <span *ngIf="loading">⏳</span>
+    </button>
+  </div>
+
+  <div class="widget-description" *ngIf="config.description">
+    <p>{{ config.description }}</p>
+  </div>
+
+  <div class="widget-content">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Executing Python code...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-state">
+      <div class="error-icon">❌</div>
+      <p class="error-message">{{ error }}</p>
+      <button (click)="refresh()">Retry</button>
+    </div>
+
+    <!-- Success State - Render based on widget type -->
+    <div *ngIf="result && result.success && !loading">
+      <app-chart-widget 
+        *ngIf="config.type === 'chart'" 
+        [data]="result.data">
+      </app-chart-widget>
+
+      <app-table-widget 
+        *ngIf="config.type === 'table'" 
+        [data]="result.data">
+      </app-table-widget>
+
+      <app-metric-widget 
+        *ngIf="config.type === 'metric'" 
+        [data]="result.data">
+      </app-metric-widget>
+
+      <!-- Custom type - just display raw JSON -->
+      <div *ngIf="config.type === 'custom'" class="custom-widget">
+        <pre>{{ result.data | json }}</pre>
+      </div>
+
+      <div class="execution-time" *ngIf="result.executionTime">
+        <small>Executed in {{ result.executionTime }}ms</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="widget-footer" *ngIf="config.refreshInterval">
+    <small>Auto-refresh: {{ config.refreshInterval }}s</small>
+  </div>
+</div>

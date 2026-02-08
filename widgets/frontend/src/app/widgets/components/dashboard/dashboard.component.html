@@ -1,0 +1,36 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>Widgets Dashboard</h1>
+    <button class="refresh-all-btn" (click)="refreshDashboard()" [disabled]="loading">
+      <span *ngIf="!loading">🔄 Refresh All</span>
+      <span *ngIf="loading">⏳ Loading...</span>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading && widgets.length === 0" class="dashboard-loading">
+    <div class="spinner"></div>
+    <p>Loading dashboard...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="dashboard-error">
+    <div class="error-icon">⚠️</div>
+    <p>{{ error }}</p>
+    <button (click)="refreshDashboard()">Retry</button>
+  </div>
+
+  <!-- Widgets Grid -->
+  <div class="widgets-grid" *ngIf="!loading && widgets.length > 0">
+    <div class="widget-card" *ngFor="let widget of widgets">
+      <app-dynamic-widget [config]="widget"></app-dynamic-widget>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && widgets.length === 0" class="empty-state">
+    <div class="empty-icon">📊</div>
+    <h2>No Widgets Configured</h2>
+    <p>Add widget configurations to the backend to see them here.</p>
+  </div>
+</div>
