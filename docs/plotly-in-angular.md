@@ -2,6 +2,19 @@
 
 This guide walks you through integrating [Plotly.js](https://plotly.com/javascript/) into an Angular application to create dynamic, data-driven charts. You will learn how to install dependencies, configure Angular modules, create batch charts, fetch data from external APIs, and build a real-world sales-monitoring dashboard.
 
+Each section builds on the previous one: you start with a static component in section 3, add API data loading in section 4, and complete the full-featured Sales Dashboard in section 5.
+
+---
+
+## Prerequisites
+
+- **Angular version:** 14–16 (NgModule-based architecture). All examples use `NgModule` and class-based components.
+
+  > **Angular 17+ note:** Angular 17+ defaults to standalone components. Replace `NgModule` imports with the `imports` array on the `@Component` decorator — e.g., `imports: [PlotlyModule, ReactiveFormsModule, CommonModule]`.
+
+- **Node.js:** 16 or later; npm 8 or later.
+- **Existing Angular application** generated with the Angular CLI (`ng new my-app`).
+
 ---
 
 ## Table of Contents
@@ -9,9 +22,10 @@ This guide walks you through integrating [Plotly.js](https://plotly.com/javascri
 1. [Installing Dependencies](#1-installing-dependencies)
 2. [Basic Plotly.js Integration with Angular](#2-basic-plotlyjs-integration-with-angular)
 3. [Dynamic Batch Chart Creation](#3-dynamic-batch-chart-creation)
-4. [Using API Data](#4-using-api-data)
+4. [Loading Charts from an API](#4-loading-charts-from-an-api)
 5. [Real-World Example: Sales Dashboard](#5-real-world-example-sales-dashboard)
 6. [Additional Enhancements](#6-additional-enhancements)
+7. [Unit Testing](#7-unit-testing)
 
 ---
 
@@ -23,11 +37,21 @@ Install the Angular Plotly wrapper and the full Plotly.js distribution:
 npm install angular-plotly.js plotly.js-dist
 ```
 
-If your project uses TypeScript, you should also install the community type definitions:
+If your project uses TypeScript, install the community type definitions:
 
 ```bash
 npm install --save-dev @types/plotly.js
 ```
+
+> **Bundle size:** `plotly.js-dist` is approximately 3.5 MB. If you only need basic chart types (bar, line, scatter, pie), consider a lighter alternative to reduce your bundle:
+>
+> ```bash
+> npm install plotly.js-basic-dist    # ~1.2 MB — covers basic chart types
+> # or
+> npm install plotly.js-dist-min      # minified full build
+> ```
+>
+> Replace `'plotly.js-dist'` with `'plotly.js-basic-dist'` wherever it appears in the imports below.
 
 ---
 
@@ -63,7 +87,7 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 export class AppModule {}
 ```
 
-> **Note:** You must assign the `plotly.js-dist` object to `PlotlyModule.plotlyjs` **before** `PlotlyModule` is listed in `imports`. This is required by `angular-plotly.js` v2+.
+> **Note:** You must assign `PlotlyModule.plotlyjs = PlotlyJS` **before** `PlotlyModule` is listed in `imports`. This is required by `angular-plotly.js` v2+.
 
 ### 2.2 Render a Single Chart in a Component
 
@@ -119,7 +143,9 @@ export interface ChartConfig {
 }
 ```
 
-### 3.2 Component with Batch Charts
+### 3.2 `DashboardComponent` — Static Version
+
+This is the starting point. Sections 4 and 5 will progressively add API loading, subscription cleanup, and filter controls to this same component.
 
 ```typescript
 // src/app/dashboard/dashboard.component.ts
@@ -137,6 +163,11 @@ export class DashboardComponent implements OnInit {
     this.charts = this.buildCharts();
   }
 
+  /** Used by the template's trackBy to avoid re-rendering unchanged charts. */
+  trackByChartId(_: number, chart: ChartConfig): string {
+    return chart.id;
+  }
+
   private buildCharts(): ChartConfig[] {
     return [
       {
@@ -150,7 +181,11 @@ export class DashboardComponent implements OnInit {
             marker: { color: ['#636EFA', '#EF553B', '#00CC96', '#AB63FA'] },
           },
         ],
-        layout: { title: 'Sales by Region', xaxis: { title: 'Region' }, yaxis: { title: 'Revenue ($)' } },
+        layout: {
+          title: 'Sales by Region',
+          xaxis: { title: 'Region' },
+          yaxis: { title: 'Revenue ($)' },
+        },
       },
       {
         id: 'pie-chart',
@@ -186,19 +221,26 @@ export class DashboardComponent implements OnInit {
             line: { color: '#EF553B' },
           },
         ],
-        layout: { title: 'Revenue vs Expenses', xaxis: { title: 'Quarter' }, yaxis: { title: 'Amount ($)' } },
+        layout: {
+          title: 'Revenue vs Expenses',
+          xaxis: { title: 'Quarter' },
+          yaxis: { title: 'Amount ($)' },
+        },
       },
     ];
   }
 }
 ```
 
-### 3.3 Template with `*ngFor`
+### 3.3 Template with `*ngFor` and `trackBy`
 
 ```html
 <!-- src/app/dashboard/dashboard.component.html -->
 <section class="dashboard">
-  <div class="chart-wrapper" *ngFor="let chart of charts">
+  <div
+    class="chart-wrapper"
+    *ngFor="let chart of charts; trackBy: trackByChartId"
+    [attr.aria-label]="chart.title">
     <h2>{{ chart.title }}</h2>
     <plotly-plot
       [data]="chart.data"
@@ -209,19 +251,44 @@ export class DashboardComponent implements OnInit {
 </section>
 ```
 
+> **Why `trackBy` matters:** Without `trackBy`, Angular destroys and re-creates every chart DOM node whenever the `charts` array is replaced (for example, during polling or filtering). With `trackByChartId`, Angular reuses DOM nodes for charts whose `id` has not changed — a critical performance optimization.
+
 Setting `[config]="{ responsive: true }"` makes every chart resize automatically when the browser window changes size.
 
 ---
 
-## 4. Using API Data
+## 4. Loading Charts from an API
 
-### 4.1 Chart Data Service
+This section extends `DashboardComponent` to fetch its data from an API instead of using hardcoded values.
+
+### 4.1 Environment Configuration
+
+Store the API base URL in Angular's environment files so it can differ between development and production:
+
+```typescript
+// src/environments/environment.ts
+export const environment = {
+  production: false,
+  apiUrl: 'https://api.example.com/charts',
+};
+```
+
+```typescript
+// src/environments/environment.prod.ts
+export const environment = {
+  production: true,
+  apiUrl: 'https://api.example.com/charts',
+};
+```
+
+### 4.2 `ChartDataService`
 
 ```typescript
 // src/app/services/chart-data.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { ChartConfig } from '../models/chart-config.model';
 
 interface ApiChartResponse {
@@ -235,14 +302,14 @@ interface ApiChartResponse {
 
 @Injectable({ providedIn: 'root' })
 export class ChartDataService {
-  private readonly apiUrl = 'https://api.example.com/charts';
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
   getCharts(): Observable<ChartConfig[]> {
     return this.http
       .get<ApiChartResponse[]>(this.apiUrl)
-      .pipe(map((responses) => responses.map(this.toChartConfig)));
+      .pipe(map((responses) => responses.map((r) => this.toChartConfig(r))));
   }
 
   private toChartConfig(response: ApiChartResponse): ChartConfig {
@@ -286,48 +353,68 @@ export class ChartDataService {
 }
 ```
 
-### 4.2 Loading Charts from the API
+> **`this` context:** `getCharts()` uses `.map((r) => this.toChartConfig(r))` rather than `.map(this.toChartConfig)`. Passing a method reference directly would lose the `this` binding inside `toChartConfig` at runtime, causing errors when it accesses `this`.
 
-```typescript
-// src/app/dashboard/dashboard.component.ts  (API version)
-import { Component, OnInit } from '@angular/core';
-import { ChartDataService } from '../services/chart-data.service';
-import { ChartConfig } from '../models/chart-config.model';
+### 4.3 Update `DashboardComponent` for API Data
 
-@Component({
-  selector: 'app-dashboard',
-  templateUrl: './dashboard.component.html',
-})
-export class DashboardComponent implements OnInit {
-  charts: ChartConfig[] = [];
-  loading = true;
-  error: string | null = null;
+Starting from the static version in section 3.2, apply the following changes (lines marked `+` are additions, lines marked `-` are removals):
 
-  constructor(private chartDataService: ChartDataService) {}
+```diff
+-import { Component, OnInit } from '@angular/core';
+-import { ChartConfig } from '../models/chart-config.model';
++import { Component, OnInit } from '@angular/core';
++import { ChartDataService } from '../services/chart-data.service';
++import { ChartConfig } from '../models/chart-config.model';
 
-  ngOnInit(): void {
-    this.chartDataService.getCharts().subscribe({
-      next: (charts) => {
-        this.charts = charts;
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load charts. Please try again.';
-        this.loading = false;
-        console.error(err);
-      },
-    });
-  }
-}
+ @Component({
+   selector: 'app-dashboard',
+   templateUrl: './dashboard.component.html',
+ })
+ export class DashboardComponent implements OnInit {
+   charts: ChartConfig[] = [];
++  loading = true;
++  error: string | null = null;
+
+-  constructor() {}
++  constructor(private chartDataService: ChartDataService) {}
+
+   ngOnInit(): void {
+-    this.charts = this.buildCharts();
++    this.chartDataService.getCharts().subscribe({
++      next: (charts) => {
++        this.charts = charts;
++        this.loading = false;
++      },
++      error: (err) => {
++        this.error = 'Failed to load charts. Please try again.';
++        this.loading = false;
++        console.error(err);
++      },
++    });
+   }
+
+   trackByChartId(_: number, chart: ChartConfig): string {
+     return chart.id;
+   }
+
+-  private buildCharts(): ChartConfig[] { ... }
+ }
 ```
 
+### 4.4 Updated Template
+
+Add loading and error states:
+
 ```html
-<!-- src/app/dashboard/dashboard.component.html  (API version) -->
+<!-- src/app/dashboard/dashboard.component.html  (after section 4 changes) -->
 <div *ngIf="loading">Loading charts…</div>
-<div *ngIf="error" class="error">{{ error }}</div>
+<div *ngIf="error" class="error" role="alert">{{ error }}</div>
 
 <section class="dashboard" *ngIf="!loading && !error">
-  <div class="chart-wrapper" *ngFor="let chart of charts">
+  <div
+    class="chart-wrapper"
+    *ngFor="let chart of charts; trackBy: trackByChartId"
+    [attr.aria-label]="chart.title">
     <plotly-plot
       [data]="chart.data"
       [layout]="chart.layout"
@@ -341,6 +428,8 @@ export class DashboardComponent implements OnInit {
 
 ## 5. Real-World Example: Sales Dashboard
 
+This section completes `DashboardComponent` by adding subscription cleanup with `takeUntil` and user-controlled region filtering — the features you would need in a real production dashboard.
+
 ### 5.1 Scenario
 
 A sales manager needs a single-page dashboard showing:
@@ -350,6 +439,8 @@ A sales manager needs a single-page dashboard showing:
 | Sales by Region | Bar | Compares total revenue across four geographic regions |
 | Traffic Sources | Pie | Shows the percentage breakdown of website traffic origins |
 | Revenue vs Expenses | Line | Tracks quarterly revenue and expenses side by side |
+
+Users can filter bar chart data by selecting a specific region from a dropdown.
 
 ### 5.2 Example API Response
 
@@ -382,42 +473,187 @@ A sales manager needs a single-page dashboard showing:
 ]
 ```
 
-### 5.3 Full Dashboard Implementation
+### 5.3 Add `ReactiveFormsModule` to `AppModule`
 
-#### Sales Dashboard Component
+The region filter control uses Angular Reactive Forms. Add `ReactiveFormsModule` to `AppModule`:
 
 ```typescript
-// src/app/sales-dashboard/sales-dashboard.component.ts
+// src/app/app.module.ts
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+import { ReactiveFormsModule } from '@angular/forms';   // ← add this
+
+import * as PlotlyJS from 'plotly.js-dist';
+import { PlotlyModule } from 'angular-plotly.js';
+
+PlotlyModule.plotlyjs = PlotlyJS;
+
+import { AppComponent } from './app.component';
+import { DashboardComponent } from './dashboard/dashboard.component';
+
+@NgModule({
+  declarations: [AppComponent, DashboardComponent],
+  imports: [
+    BrowserModule,
+    HttpClientModule,
+    ReactiveFormsModule,              // ← add this
+    PlotlyModule,
+  ],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+```
+
+### 5.4 Final `DashboardComponent` — Cleanup and Filters
+
+Starting from the API version in section 4.3, apply the following changes:
+
+```diff
+-import { Component, OnInit } from '@angular/core';
+-import { ChartDataService } from '../services/chart-data.service';
+-import { ChartConfig } from '../models/chart-config.model';
++import { Component, OnInit, OnDestroy } from '@angular/core';
++import { FormControl } from '@angular/forms';
++import { combineLatest, Subject } from 'rxjs';
++import { debounceTime, distinctUntilChanged, startWith, takeUntil } from 'rxjs/operators';
++import { ChartDataService } from '../services/chart-data.service';
++import { ChartConfig } from '../models/chart-config.model';
+
+ @Component({
+   selector: 'app-dashboard',
+   templateUrl: './dashboard.component.html',
++  styleUrls: ['./dashboard.component.scss'],
+ })
+-export class DashboardComponent implements OnInit {
+-  charts: ChartConfig[] = [];
++export class DashboardComponent implements OnInit, OnDestroy {
++  allCharts: ChartConfig[] = [];
++  filteredCharts: ChartConfig[] = [];
+   loading = true;
+   error: string | null = null;
+
++  regionFilter = new FormControl<string>('All');
++  readonly regions = ['All', 'North', 'South', 'East', 'West'];
++
++  private destroy$ = new Subject<void>();
+
+   constructor(private chartDataService: ChartDataService) {}
+
+   ngOnInit(): void {
+-    this.chartDataService.getCharts().subscribe({
+-      next: (charts) => {
+-        this.charts = charts;
+-        this.loading = false;
+-      },
+-      error: (err) => {
+-        this.error = 'Failed to load charts. Please try again.';
+-        this.loading = false;
+-        console.error(err);
+-      },
+-    });
++    combineLatest([
++      this.chartDataService.getCharts(),
++      this.regionFilter.valueChanges.pipe(
++        startWith('All'),
++        debounceTime(200),
++        distinctUntilChanged(),
++      ),
++    ])
++      .pipe(takeUntil(this.destroy$))
++      .subscribe({
++        next: ([charts, region]) => {
++          this.allCharts = charts;
++          this.filteredCharts = this.applyFilter(charts, region ?? 'All');
++          this.loading = false;
++        },
++        error: (err) => {
++          this.error = 'Failed to load charts. Please try again.';
++          this.loading = false;
++          console.error(err);
++        },
++      });
+   }
+
++  ngOnDestroy(): void {
++    this.destroy$.next();
++    this.destroy$.complete();
++  }
++
+   trackByChartId(_: number, chart: ChartConfig): string {
+     return chart.id;
+   }
++
++  trackByRegion(_: number, region: string): string {
++    return region;
++  }
++
++  private applyFilter(charts: ChartConfig[], region: string): ChartConfig[] {
++    if (region === 'All') {
++      return charts;
++    }
++    return charts.map((chart) => {
++      if (chart.data[0]?.type === 'bar') {
++        const trace = chart.data[0] as { x: string[]; y: number[]; type: string };
++        const idx = trace.x.indexOf(region);
++        if (idx === -1) return chart;
++        return { ...chart, data: [{ ...trace, x: [trace.x[idx]], y: [trace.y[idx]] }] };
++      }
++      return chart;
++    });
++  }
+ }
+```
+
+> **Why `combineLatest` instead of nested subscriptions?** Subscribing to `regionFilter.valueChanges` *inside* the `getCharts()` callback creates a nested subscription that is never unsubscribed — a memory leak. `combineLatest` combines both streams into a single, cleanly-managed subscription that `takeUntil(this.destroy$)` will automatically unsubscribe when the component is destroyed.
+
+The complete final component for copy-paste:
+
+```typescript
+// src/app/dashboard/dashboard.component.ts  (final — Sales Dashboard)
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { FormControl } from '@angular/forms';
+import { combineLatest, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, startWith, takeUntil } from 'rxjs/operators';
 import { ChartDataService } from '../services/chart-data.service';
 import { ChartConfig } from '../models/chart-config.model';
 
 @Component({
-  selector: 'app-sales-dashboard',
-  templateUrl: './sales-dashboard.component.html',
-  styleUrls: ['./sales-dashboard.component.scss'],
+  selector: 'app-dashboard',
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.scss'],
 })
-export class SalesDashboardComponent implements OnInit, OnDestroy {
-  charts: ChartConfig[] = [];
+export class DashboardComponent implements OnInit, OnDestroy {
+  allCharts: ChartConfig[] = [];
+  filteredCharts: ChartConfig[] = [];
   loading = true;
   error: string | null = null;
+
+  regionFilter = new FormControl<string>('All');
+  readonly regions = ['All', 'North', 'South', 'East', 'West'];
 
   private destroy$ = new Subject<void>();
 
   constructor(private chartDataService: ChartDataService) {}
 
   ngOnInit(): void {
-    this.chartDataService
-      .getCharts()
+    combineLatest([
+      this.chartDataService.getCharts(),
+      this.regionFilter.valueChanges.pipe(
+        startWith('All'),
+        debounceTime(200),
+        distinctUntilChanged(),
+      ),
+    ])
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (charts) => {
-          this.charts = charts;
+        next: ([charts, region]) => {
+          this.allCharts = charts;
+          this.filteredCharts = this.applyFilter(charts, region ?? 'All');
           this.loading = false;
         },
         error: (err) => {
-          this.error = 'Unable to load dashboard data.';
+          this.error = 'Failed to load charts. Please try again.';
           this.loading = false;
           console.error(err);
         },
@@ -428,26 +664,56 @@ export class SalesDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+  trackByChartId(_: number, chart: ChartConfig): string {
+    return chart.id;
+  }
+
+  trackByRegion(_: number, region: string): string {
+    return region;
+  }
+
+  private applyFilter(charts: ChartConfig[], region: string): ChartConfig[] {
+    if (region === 'All') {
+      return charts;
+    }
+    return charts.map((chart) => {
+      if (chart.data[0]?.type === 'bar') {
+        const trace = chart.data[0] as { x: string[]; y: number[]; type: string };
+        const idx = trace.x.indexOf(region);
+        if (idx === -1) return chart;
+        return { ...chart, data: [{ ...trace, x: [trace.x[idx]], y: [trace.y[idx]] }] };
+      }
+      return chart;
+    });
+  }
 }
 ```
 
-#### Sales Dashboard Template
+### 5.5 Final Template
 
 ```html
-<!-- src/app/sales-dashboard/sales-dashboard.component.html -->
+<!-- src/app/dashboard/dashboard.component.html  (final) -->
 <div class="sales-dashboard">
   <header>
     <h1>Sales Performance Dashboard</h1>
   </header>
 
+  <div class="filter-bar">
+    <label for="region-filter">Filter by region:</label>
+    <select id="region-filter" [formControl]="regionFilter">
+      <option *ngFor="let r of regions; trackBy: trackByRegion" [value]="r">{{ r }}</option>
+    </select>
+  </div>
+
   <div class="loading-spinner" *ngIf="loading">Loading…</div>
-  <div class="error-message" *ngIf="error">{{ error }}</div>
+  <div class="error-message" *ngIf="error" role="alert">{{ error }}</div>
 
   <div class="charts-grid" *ngIf="!loading && !error">
     <div
       class="chart-card"
-      *ngFor="let chart of charts"
-      [attr.data-chart-id]="chart.id">
+      *ngFor="let chart of filteredCharts; trackBy: trackByChartId"
+      [attr.aria-label]="chart.title">
       <plotly-plot
         [data]="chart.data"
         [layout]="chart.layout"
@@ -458,13 +724,22 @@ export class SalesDashboardComponent implements OnInit, OnDestroy {
 </div>
 ```
 
-#### Sales Dashboard Styles
+### 5.6 Styles
 
 ```scss
-/* src/app/sales-dashboard/sales-dashboard.component.scss */
+/* src/app/dashboard/dashboard.component.scss */
 .sales-dashboard {
   padding: 1.5rem;
   font-family: sans-serif;
+}
+
+.filter-bar {
+  margin-bottom: 1rem;
+
+  label {
+    margin-right: 0.5rem;
+    font-weight: 500;
+  }
 }
 
 .charts-grid {
@@ -492,163 +767,233 @@ export class SalesDashboardComponent implements OnInit, OnDestroy {
 
 ## 6. Additional Enhancements
 
-### 6.1 Real-Time Updates with Observables or WebSockets
+### 6.1 Real-Time Updates with Polling
 
-Use an interval or a WebSocket to push fresh data into an existing chart without re-mounting the component.
-
-#### Polling with `interval`
+Use `interval` + `switchMap` to poll the API for fresh data at a regular interval. Note the use of `takeUntil` for cleanup:
 
 ```typescript
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { interval, Subscription, switchMap } from 'rxjs';
+import { interval, Subject } from 'rxjs';
+import { switchMap, takeUntil } from 'rxjs/operators';
 import { ChartDataService } from '../services/chart-data.service';
 import { ChartConfig } from '../models/chart-config.model';
 
-@Component({ selector: 'app-realtime-chart', template: `
-  <plotly-plot *ngIf="chart" [data]="chart.data" [layout]="chart.layout"></plotly-plot>
-` })
+@Component({
+  selector: 'app-realtime-chart',
+  template: `
+    <plotly-plot *ngIf="chart" [data]="chart.data" [layout]="chart.layout"></plotly-plot>
+  `,
+})
 export class RealtimeChartComponent implements OnInit, OnDestroy {
   chart: ChartConfig | null = null;
-  private subscription!: Subscription;
+  private destroy$ = new Subject<void>();
 
   constructor(private chartDataService: ChartDataService) {}
 
   ngOnInit(): void {
-    // Poll every 5 seconds
-    this.subscription = interval(5000)
-      .pipe(switchMap(() => this.chartDataService.getCharts()))
+    interval(5000)
+      .pipe(
+        switchMap(() => this.chartDataService.getCharts()),
+        takeUntil(this.destroy$),
+      )
       .subscribe((charts) => (this.chart = charts[0] ?? null));
   }
 
   ngOnDestroy(): void {
-    this.subscription.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
 ```
 
-#### WebSocket Integration
+### 6.2 WebSocket Integration
+
+For push-based real-time updates, use a WebSocket service that propagates errors to the component rather than silently logging them:
 
 ```typescript
+// src/app/services/chart-websocket.service.ts
 import { Injectable, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { ChartConfig } from '../models/chart-config.model';
 
 @Injectable({ providedIn: 'root' })
 export class ChartWebSocketService implements OnDestroy {
   private socket!: WebSocket;
-  readonly chartUpdates$ = new Subject<ChartConfig>();
+  private readonly chartUpdatesSubject = new Subject<ChartConfig>();
+  private readonly errorsSubject = new Subject<string>();
+
+  /** Emits parsed chart updates received from the server. */
+  readonly updates$: Observable<ChartConfig> = this.chartUpdatesSubject.asObservable();
+
+  /** Emits a human-readable error message when the WebSocket encounters a problem. */
+  readonly errors$: Observable<string> = this.errorsSubject.asObservable();
 
   connect(url: string): void {
     this.socket = new WebSocket(url);
 
     this.socket.onmessage = (event: MessageEvent) => {
-      const payload = JSON.parse(event.data as string) as ChartConfig;
-      this.chartUpdates$.next(payload);
+      try {
+        const payload = JSON.parse(event.data as string) as ChartConfig;
+        this.chartUpdatesSubject.next(payload);
+      } catch {
+        this.errorsSubject.next('Received malformed data from the server.');
+      }
     };
 
-    this.socket.onerror = (err) => console.error('WebSocket error', err);
+    this.socket.onerror = () => {
+      this.errorsSubject.next('WebSocket connection error. Retrying…');
+    };
+
+    this.socket.onclose = (event: CloseEvent) => {
+      if (!event.wasClean) {
+        this.errorsSubject.next('WebSocket closed unexpectedly. Please refresh the page.');
+        // For automatic reconnection, schedule a reconnect here:
+        // setTimeout(() => this.connect(url), 5000);
+      }
+    };
   }
 
   ngOnDestroy(): void {
     this.socket?.close();
-    this.chartUpdates$.complete();
+    this.chartUpdatesSubject.complete();
+    this.errorsSubject.complete();
   }
 }
 ```
 
-In your component, subscribe to `chartUpdates$` and reassign the chart data reference to trigger Angular's change detection:
+Subscribe to both `updates$` and `errors$` in your component:
 
 ```typescript
-this.chartWebSocketService.chartUpdates$
+this.chartWebSocketService.updates$
   .pipe(takeUntil(this.destroy$))
   .subscribe((updated) => {
-    const idx = this.charts.findIndex((c) => c.id === updated.id);
+    const idx = this.allCharts.findIndex((c) => c.id === updated.id);
     if (idx !== -1) {
       // Immutable update triggers OnPush change detection
-      this.charts = [
-        ...this.charts.slice(0, idx),
+      this.allCharts = [
+        ...this.allCharts.slice(0, idx),
         updated,
-        ...this.charts.slice(idx + 1),
+        ...this.allCharts.slice(idx + 1),
       ];
+      this.filteredCharts = this.applyFilter(
+        this.allCharts,
+        this.regionFilter.value ?? 'All',
+      );
     }
   });
+
+this.chartWebSocketService.errors$
+  .pipe(takeUntil(this.destroy$))
+  .subscribe((msg) => (this.error = msg));
 ```
 
-### 6.2 Handling User-Defined Filters
+> **Reconnection strategies:** For production use, consider [`RxJS webSocket`](https://rxjs.dev/api/webSocket/webSocket) or [`ngx-socket-io`](https://www.npmjs.com/package/ngx-socket-io), which include built-in reconnection and exponential backoff.
 
-Allow users to filter chart data by date range, region, or any other dimension without re-fetching from the API.
+### 6.3 Plotly Chart Events
+
+`angular-plotly.js` exposes Plotly's interaction events as Angular output bindings on `<plotly-plot>`:
+
+```html
+<plotly-plot
+  [data]="chart.data"
+  [layout]="chart.layout"
+  (plotlyClick)="onChartClick($event)"
+  (plotlyHover)="onChartHover($event)"
+  (plotlyUnhover)="onChartUnhover($event)"
+  (plotlySelected)="onChartSelected($event)">
+</plotly-plot>
+```
 
 ```typescript
-// src/app/dashboard/dashboard.component.ts  (with filter support)
-import { Component, OnInit } from '@angular/core';
-import { FormControl } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, startWith } from 'rxjs';
-import { ChartDataService } from '../services/chart-data.service';
-import { ChartConfig } from '../models/chart-config.model';
-
-@Component({
-  selector: 'app-dashboard',
-  templateUrl: './dashboard.component.html',
-})
-export class DashboardComponent implements OnInit {
-  allCharts: ChartConfig[] = [];
-  filteredCharts: ChartConfig[] = [];
-  regionFilter = new FormControl<string>('All');
-
-  readonly regions = ['All', 'North', 'South', 'East', 'West'];
-
-  constructor(private chartDataService: ChartDataService) {}
-
-  ngOnInit(): void {
-    this.chartDataService.getCharts().subscribe((charts) => {
-      this.allCharts = charts;
-
-      this.regionFilter.valueChanges
-        .pipe(startWith('All'), debounceTime(200), distinctUntilChanged())
-        .subscribe((region) => this.applyFilter(region ?? 'All'));
-    });
-  }
-
-  private applyFilter(region: string): void {
-    if (region === 'All') {
-      this.filteredCharts = this.allCharts;
-      return;
-    }
-
-    this.filteredCharts = this.allCharts.map((chart) => {
-      // For bar charts, keep only the selected region's bar
-      if (chart.data[0]?.type === 'bar') {
-        const trace = chart.data[0] as { x: string[]; y: number[]; type: string };
-        const idx = trace.x.indexOf(region);
-        return idx === -1
-          ? chart
-          : {
-              ...chart,
-              data: [{ ...trace, x: [trace.x[idx]], y: [trace.y[idx]] }],
-            };
-      }
-      return chart;
-    });
-  }
+onChartClick(event: { points: Array<{ x: unknown; y: unknown }> }): void {
+  const point = event.points[0];
+  console.log('Clicked point:', point.x, point.y);
 }
 ```
 
-```html
-<!-- Filter control in the template -->
-<label for="region-filter">Region:</label>
-<select id="region-filter" [formControl]="regionFilter">
-  <option *ngFor="let r of regions" [value]="r">{{ r }}</option>
-</select>
+See the [angular-plotly.js README](https://github.com/plotly/angular-plotly.js#output-events) for the full list of available events.
 
-<div class="charts-grid">
-  <div class="chart-card" *ngFor="let chart of filteredCharts">
-    <plotly-plot
-      [data]="chart.data"
-      [layout]="chart.layout"
-      [config]="{ responsive: true }">
-    </plotly-plot>
+### 6.4 Accessibility
+
+- **`aria-label` on chart containers:** Add `[attr.aria-label]="chart.title"` to each chart's wrapper `<div>`. This gives screen readers a meaningful description of each chart region (already included in the templates above).
+- **`role="alert"` on error messages:** Apply `role="alert"` to your error `<div>` so assistive technologies announce errors immediately (also included in the templates above).
+- **Data table fallback:** For critical data, render a visually hidden `<table>` alongside each chart to expose the underlying data to screen readers:
+
+  ```html
+  <div class="chart-card" [attr.aria-label]="chart.title">
+    <plotly-plot [data]="chart.data" [layout]="chart.layout"></plotly-plot>
+    <table class="sr-only" [attr.aria-label]="chart.title + ' data'">
+      <!-- render chart.data rows here -->
+    </table>
   </div>
-</div>
+  ```
+
+  The `.sr-only` class visually hides the table while keeping it in the accessibility tree:
+
+  ```css
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  ```
+
+---
+
+## 7. Unit Testing
+
+### Testing `ChartDataService`
+
+Use Angular's `HttpClientTestingModule` to mock HTTP calls without hitting a real API:
+
+```typescript
+// src/app/services/chart-data.service.spec.ts
+import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { ChartDataService } from './chart-data.service';
+import { environment } from '../../environments/environment';
+
+describe('ChartDataService', () => {
+  let service: ChartDataService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [ChartDataService],
+    });
+    service = TestBed.inject(ChartDataService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => httpMock.verify());
+
+  it('should transform a bar chart API response into a ChartConfig', () => {
+    service.getCharts().subscribe((charts) => {
+      expect(charts.length).toBe(1);
+      expect(charts[0].id).toBe('sales-by-region');
+      expect(charts[0].data[0].type).toBe('bar');
+    });
+
+    const req = httpMock.expectOne(environment.apiUrl);
+    expect(req.request.method).toBe('GET');
+    req.flush([
+      {
+        id: 'sales-by-region',
+        title: 'Sales by Region',
+        type: 'bar',
+        labels: ['North', 'South', 'East', 'West'],
+        values: [120000, 95000, 140000, 80000],
+      },
+    ]);
+  });
+});
 ```
 
 ---
@@ -657,11 +1002,16 @@ export class DashboardComponent implements OnInit {
 
 | Topic | Key Points |
 |---|---|
-| Installation | `npm install angular-plotly.js plotly.js-dist` |
-| Module Setup | Assign `PlotlyModule.plotlyjs = PlotlyJS` before importing `PlotlyModule` |
-| Batch Charts | Store configs in a `ChartConfig[]` array; iterate with `*ngFor` |
-| API Data | Use `HttpClient` + `map` to transform API responses into `ChartConfig` objects |
-| Real-Time | Use `interval` + `switchMap` for polling or `WebSocket` for push updates |
-| Filters | Use Angular `FormControl` + `debounceTime` to reactively filter data |
+| Prerequisites | Angular 14–16, Node 16+, NgModule-based architecture |
+| Installation | `npm install angular-plotly.js plotly.js-dist`; use `plotly.js-basic-dist` to reduce bundle by ~2 MB |
+| Module Setup | Assign `PlotlyModule.plotlyjs = PlotlyJS` before importing `PlotlyModule`; add `ReactiveFormsModule` when using filters |
+| Batch Charts | Store configs in `ChartConfig[]`; iterate with `*ngFor` and `trackBy: trackByChartId` |
+| API Data | Use `HttpClient` + `.map((r) => this.toChartConfig(r))` to preserve `this` context; read URL from `environment.apiUrl` |
+| Cleanup | Always use `takeUntil(this.destroy$)` and complete `destroy$` in `ngOnDestroy` |
+| Filters | Use `combineLatest` + `ReactiveFormsModule` to avoid nested subscriptions |
+| Real-Time | Use `interval` + `switchMap` for polling; use a WebSocket service with `updates$` and `errors$` for push updates |
+| Events | Use `(plotlyClick)`, `(plotlyHover)`, etc. on `<plotly-plot>` for interaction handling |
+| Accessibility | Add `aria-label` to chart containers; `role="alert"` on errors; optionally add a data-table fallback |
+| Testing | Use `HttpClientTestingModule` to mock API calls in service tests |
 
 By following this guide you can embed Plotly.js efficiently in Angular applications, dynamically generate charts at scale with batch configurations, and integrate external APIs for data-driven visualisations.
