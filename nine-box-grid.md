@@ -200,8 +200,7 @@ Look for employees who:
 
 - **Review cadence:**
   - Run formally at least annually.
-  - Semi-annual reviews improve responsiveness by capturing change and adjusting development plans more frequently.
-  - Fast-changing organizations may benefit from quarterly check-ins.
+  - Adapt cadence to organizational pace: semi-annual reviews often improve responsiveness, while fast-changing organizations may benefit from quarterly check-ins.
 - **Use 360-degree feedback:** Add peer, partner, and stakeholder perspectives for balance.
 - **Avoid bias:** Calibrate across managers; challenge assumptions with evidence.
 - **Respect context:** Consider role complexity, business conditions, and team maturity.
