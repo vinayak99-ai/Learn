@@ -198,7 +198,10 @@ Look for employees who:
 
 ## 9. Key Considerations & Best Practices
 
-- **Review cadence:** Run formally at least annually; semi-annual reviews improve responsiveness, and fast-changing organizations may benefit from quarterly check-ins.
+- **Review cadence:**
+  - Run formally at least annually.
+  - Semi-annual reviews improve responsiveness.
+  - Fast-changing organizations may benefit from quarterly check-ins.
 - **Use 360-degree feedback:** Add peer, partner, and stakeholder perspectives for balance.
 - **Avoid bias:** Calibrate across managers; challenge assumptions with evidence.
 - **Respect context:** Consider role complexity, business conditions, and team maturity.
