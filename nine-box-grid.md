@@ -153,7 +153,7 @@ Look for employees who:
 
 ### Succession planning considerations
 
-- Maintain at least one ready-now and one ready-soon successor for critical roles
+- Strive to identify at least one ready-now and one ready-soon successor for critical roles
 - Use evidence-based readiness criteria (results, behaviors, leadership capability)
 - Reassess succession pipelines at each talent review cycle
 
@@ -200,7 +200,7 @@ Look for employees who:
 
 - **Review cadence:**
   - Run formally at least annually.
-  - Semi-annual reviews improve responsiveness.
+  - Semi-annual reviews improve responsiveness by capturing change and adjusting development plans more frequently.
   - Fast-changing organizations may benefit from quarterly check-ins.
 - **Use 360-degree feedback:** Add peer, partner, and stakeholder perspectives for balance.
 - **Avoid bias:** Calibrate across managers; challenge assumptions with evidence.
