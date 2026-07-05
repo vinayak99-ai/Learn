@@ -1,104 +1,175 @@
-# AI Product Manager Agent
+# AI Product Manager Portal
 ## Implementation Plan
 
 ### Executive Summary
 
-A plan to build an "AI PM" — an autonomous agent that takes on core Product Manager responsibilities: turning raw signal (customer feedback, support tickets, analytics, stakeholder requests) into prioritized backlog items, well-formed specs, and status updates. The agent operates with humans-in-the-loop on judgment calls (prioritization tradeoffs, roadmap commitments, stakeholder communication) and full autonomy on mechanical work (drafting, formatting, summarizing, tracking).
+A simple, local-first "AI PM" portal for drafting and managing product documentation. A React (shadcn + Tailwind) UI lets a user create and browse product plans and feature docs. A Python backend stores everything as JSON files on disk and integrates with an LLM to generate and expand documentation from prompts. No external services, databases, or auth — runs entirely on localhost.
 
 ---
 
-## 1. Problem & Goals
-
-### Core Pain Points to Solve
-- **Signal overload**: Feedback, tickets, and requests arrive from many channels and are rarely triaged consistently.
-- **Spec drafting friction**: Turning a rough idea into a reviewable PRD/spec takes disproportionate PM time.
-- **Backlog grooming toil**: Prioritization inputs (impact, effort, dependencies) are scattered and manually reconciled.
-- **Stakeholder update overhead**: Status reporting to different audiences (eng, leadership, customers) is repetitive.
+## 1. Goals & Scope
 
 ### Goals
-- Reduce time from "raw signal" to "actionable, prioritized backlog item."
-- Produce first-draft specs and roadmap updates that need editing, not rewriting.
-- Keep a human PM as the final decision-maker on scope, priority, and commitments.
+- Create, view, edit, and organize product plan / feature documents through a UI.
+- Use an LLM to generate a first draft of a document from a short prompt, and to expand/refine existing sections on request.
+- Store all product data as JSON on the local filesystem — no database.
 
-### Non-Goals
-- Fully autonomous roadmap decisions without human approval.
-- Replacing PM judgment on strategy, pricing, or org-level tradeoffs.
-
----
-
-## 2. Agent Capabilities
-
-| Capability | Description | Autonomy Level |
-|---|---|---|
-| **Intake triage** | Ingest feedback/tickets/requests, tag by theme, dedupe, link to existing backlog items | Full autonomy |
-| **Backlog grooming** | Score items on impact/effort/confidence, propose ranked ordering | Semi-autonomous (PM approves ranking) |
-| **Spec drafting** | Generate first-draft PRD/spec from a prompt, ticket thread, or meeting notes | Semi-autonomous (PM reviews before sharing) |
-| **Roadmap synthesis** | Roll up backlog + spec status into a roadmap view | Semi-autonomous |
-| **Stakeholder updates** | Draft status updates tailored to audience (eng standup, exec summary, customer changelog) | Semi-autonomous |
-| **Meeting notes → actions** | Convert meeting transcripts into action items and spec updates | Full autonomy (actions flagged for review) |
-| **Commitment decisions** | Approve scope, ship dates, tradeoffs | Human-in-the-loop (mandatory) |
+### Non-Goals (for this simple version)
+- Multi-user auth, permissions, or hosted deployment.
+- Real-time collaboration.
+- Integrations with external trackers (Jira, GitHub Issues, etc.) — future enhancement.
 
 ---
 
-## 3. Architecture
+## 2. Tech Stack
 
-### Inputs
-- Ticket/issue trackers (GitHub Issues, Jira)
-- Customer feedback channels (support tickets, sales notes, survey responses)
-- Meeting transcripts / notes
-- Analytics and usage data
-- Existing backlog and roadmap docs
-
-### Agent Pipeline
-1. **Ingest** — pull raw items from connected sources on a schedule or webhook trigger.
-2. **Classify & dedupe** — tag by theme/product area, match against existing backlog items.
-3. **Score** — apply a prioritization framework (e.g., RICE or a custom weighted model) using available signal.
-4. **Draft** — generate spec/update drafts for items above a triage threshold.
-5. **Route for review** — surface ranked backlog and drafts to the PM for approval/edits.
-6. **Publish** — on approval, update the backlog/roadmap and send stakeholder communications.
-
-### Outputs
-- Groomed, ranked backlog (with rationale attached to each ranking)
-- Draft specs/PRDs linked to source signal
-- Roadmap status rollups
-- Audience-specific stakeholder updates
-
----
-
-## 4. Human-in-the-Loop Checkpoints
-
-| Checkpoint | Why it requires a human |
+| Layer | Choice |
 |---|---|
-| Final backlog ranking | Reflects strategic tradeoffs the agent can't fully see (org priorities, politics, timing) |
-| Spec approval before sharing | Ensures accuracy and appropriate framing before it reaches engineering or customers |
-| Roadmap commitments | Ship dates and scope commitments carry external accountability |
-| Customer-facing communication | Tone and disclosure require human judgment |
+| Frontend | React + Vite, shadcn/ui, Tailwind CSS |
+| Backend | Python (FastAPI) |
+| Storage | JSON files on disk (one file per document + an index file) |
+| LLM | Provider-agnostic client in backend (Claude by default), called via a `/generate` endpoint |
 
 ---
 
-## 5. Implementation Phases
+## 3. Data Model
 
-| Phase | Name | Focus Area | Estimated Duration |
-|---|---|---|---|
-| 1 | Intake & Triage | Connect data sources, build classification/dedupe pipeline | 3-4 Sprints |
-| 2 | Prioritization | Build scoring model, ranked backlog view, PM approval workflow | 3-4 Sprints |
-| 3 | Drafting | Spec/PRD generation, stakeholder update generation | 4-6 Sprints |
-| 4 | Roadmap Sync | Roadmap rollups, cross-tool sync (Jira/GitHub/Notion), reporting | 3-4 Sprints |
+All product data lives under a single `data/` directory as JSON files. No database.
+
+```
+data/
+  index.json                # list of all documents (id, title, type, status, timestamps)
+  documents/
+    <doc_id>.json            # full content of one document
+```
+
+**`index.json`**
+```json
+{
+  "documents": [
+    {
+      "id": "doc_001",
+      "title": "Checkout Redesign",
+      "type": "feature",        // "product_plan" | "feature"
+      "status": "draft",        // "draft" | "in_review" | "approved"
+      "created_at": "2026-07-05T10:00:00Z",
+      "updated_at": "2026-07-05T10:00:00Z"
+    }
+  ]
+}
+```
+
+**`documents/<doc_id>.json`**
+```json
+{
+  "id": "doc_001",
+  "title": "Checkout Redesign",
+  "type": "feature",
+  "status": "draft",
+  "sections": [
+    { "heading": "Problem", "content": "..." },
+    { "heading": "Proposed Solution", "content": "..." },
+    { "heading": "Success Metrics", "content": "..." }
+  ],
+  "prompt_history": [
+    { "prompt": "Draft a feature doc for a faster checkout flow", "timestamp": "..." }
+  ],
+  "created_at": "2026-07-05T10:00:00Z",
+  "updated_at": "2026-07-05T10:00:00Z"
+}
+```
 
 ---
 
-## 6. Success Metrics
+## 4. Backend (Python / FastAPI)
 
-- Time from signal intake to triaged backlog item (target: reduce by >50%).
-- % of AI-drafted specs accepted with only minor edits.
-- PM time spent on status reporting (target: reduce materially).
-- Backlog freshness (age of stale/untriaged items).
+### Responsibilities
+- Read/write JSON files under `data/` (no ORM, no DB driver).
+- Expose a small REST API for the frontend.
+- Call the LLM to generate or expand document content, and merge the result back into the document's JSON.
+
+### API Endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/documents` | List all documents (from `index.json`) |
+| `GET` | `/documents/{id}` | Get full document content |
+| `POST` | `/documents` | Create a new document (blank or from a prompt) |
+| `PUT` | `/documents/{id}` | Update a document's sections/status/title |
+| `DELETE` | `/documents/{id}` | Delete a document |
+| `POST` | `/documents/{id}/generate` | Send a prompt + existing content to the LLM, append/update sections with the result |
+
+### File Layout
+```
+backend/
+  main.py            # FastAPI app, route definitions
+  storage.py          # read/write helpers for index.json and documents/*.json
+  llm.py              # LLM client wrapper (prompt templates, calls out to model)
+  models.py            # Pydantic schemas for request/response validation
+data/
+  index.json
+  documents/
+```
 
 ---
 
-## 7. Risks & Open Questions
+## 5. Frontend (React + shadcn + Tailwind)
 
-- **Prioritization bias**: The scoring model must not silently encode bad assumptions (e.g., overweighting loudest customers). Requires periodic human audit of rankings.
-- **Spec quality drift**: Draft quality depends on input signal quality; garbage-in/garbage-out risk for poorly documented tickets.
-- **Tool integration surface**: Which trackers/sources to support first (GitHub Issues vs. Jira vs. Linear) is still open.
-- **Ownership of commitments**: Need clear process guarantees that the agent never publishes a roadmap commitment without explicit PM sign-off.
+### Pages / Views
+- **Document List** — table/grid of all documents (title, type, status, last updated), with a "New Document" button.
+- **Document Editor** — section-by-section editor (shadcn `Card`/`Textarea` per section), title + status controls, save button.
+- **Generate Panel** — a prompt input (shadcn `Textarea` + `Button`) docked in the editor that sends the prompt to `/documents/{id}/generate` and inserts the returned content into the document.
+- **New Document Dialog** — shadcn `Dialog` to pick type (`product_plan` / `feature`) and optionally provide an initial prompt to generate the first draft immediately.
+
+### Component Structure
+```
+frontend/
+  src/
+    pages/
+      DocumentList.tsx
+      DocumentEditor.tsx
+    components/
+      NewDocumentDialog.tsx
+      GeneratePanel.tsx
+      SectionEditor.tsx
+    lib/
+      api.ts           # thin fetch wrapper for backend endpoints
+```
+
+### Styling
+- Tailwind CSS for layout/utility classes.
+- shadcn/ui components (`Button`, `Card`, `Dialog`, `Textarea`, `Badge`, `Table`) for consistent UI primitives — no custom design system needed for v1.
+
+---
+
+## 6. LLM Integration Flow
+
+1. User writes a prompt in the Generate Panel (e.g., "Draft the Problem and Success Metrics sections for a faster checkout flow").
+2. Frontend calls `POST /documents/{id}/generate` with `{ prompt }`.
+3. Backend (`llm.py`) builds a request combining: the prompt, the document's current sections (for context), and a system instruction to return structured section output.
+4. LLM response is parsed into `{ heading, content }` sections and merged into the document JSON (new sections appended, matching headings updated).
+5. Backend writes the updated document to `documents/<doc_id>.json`, updates `updated_at` in both the document and `index.json`, and returns the updated document to the frontend.
+6. Frontend re-renders the editor with the new content; user can keep editing manually or issue another prompt.
+
+---
+
+## 7. Implementation Steps
+
+| Step | Task |
+|---|---|
+| 1 | Scaffold backend: FastAPI app, `storage.py` read/write helpers, `data/` directory with empty `index.json` |
+| 2 | Implement CRUD endpoints for documents (list, get, create, update, delete) backed by JSON files |
+| 3 | Scaffold frontend: Vite + React + Tailwind + shadcn setup, `api.ts` client |
+| 4 | Build Document List page wired to `GET /documents` |
+| 5 | Build Document Editor page wired to `GET/PUT /documents/{id}` |
+| 6 | Add LLM client (`llm.py`) and `/documents/{id}/generate` endpoint |
+| 7 | Build Generate Panel + New Document Dialog in the frontend, wired to the generate endpoint |
+| 8 | Polish: status badges, delete confirmation, basic empty/error states |
+
+---
+
+## 8. Open Questions
+
+- Which LLM provider/model to default to, and how API keys are supplied locally (env var vs. config file).
+- Whether documents need a fixed section template per `type` (product_plan vs. feature) or fully freeform sections.
+- Whether prompt history per document (already in the data model) should be surfaced in the UI in v1 or just stored for later.
