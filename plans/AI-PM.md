@@ -176,20 +176,23 @@ Everything from earlier planning, plus the natural remaining agents from the ori
 
 ### 8.0 Full Agent Catalog
 
-| # | Agent | Phase | Role |
-|---|---|---|---|
-| 1 | **Review Agent** | 1 (MVP) | Reads the chat conversation, decides if it's enough, returns a capped list of clarifying questions (or none) |
-| 2 | **Synthesis Agent** | 1 (MVP) | Turns the full chat conversation into the finished product document (`sections`) |
-| 3 | **Refinement Agent** | 2 | Ad-hoc, prompt-driven expansion/rewrite of one or more sections after synthesis, without re-running the whole intake |
-| 4 | **Validation Agent** | 2 | Checks a document's sections against its type's required-fields schema, structurally and qualitatively |
-| 5 | **Decomposition Agent** | 3 | Splits a validated product into candidate features, and each accepted feature into candidate sub-features |
-| 6 | **Architecture Evaluator Agent** | 3 | Reviews a validated feature/sub-feature for technical feasibility, dependencies, and design risk before it's considered buildable |
-| 7 | **Artifact Agent** | 4 | Generates downstream artifacts (user stories, test plans, acceptance criteria) from an architecture-approved feature/sub-feature |
-| 8 | **Jira/Confluence Agent** | 4 | Publishes finished docs/artifacts as Jira epics/stories and Confluence pages; writes the resulting IDs back to local JSON |
-| 9 | **Prioritization Agent** | 5 | Scores and ranks features/sub-features (e.g., RICE-style) using whatever signal exists — architecture risk, artifact scope, PM-supplied inputs |
-| 10 | **Roadmap Synthesis Agent** | 5 | Rolls up product/feature statuses and priority scores into a readable roadmap view |
-| 11 | **Stakeholder Update Agent** | 5 | Drafts audience-specific status updates (eng standup, exec summary, customer changelog) from current document state |
-| 12 | **Meeting Notes Agent** | 5 | Converts a pasted meeting transcript/notes into action items and proposed section updates on the relevant product/feature docs |
+Every agent's role documented consistently — what it takes in, what it hands back, and what triggers it — so there's one place to check "what does this agent actually do" instead of piecing it together from prose.
+
+| # | Agent | Phase | Purpose | Input | Output | Triggered by |
+|---|---|---|---|---|---|---|
+| 1 | **Review Agent** | 1 (MVP) | Decide whether the PM's product description is complete enough to draft, or needs clarification first | Chat `conversation` so far | `ReviewResult{questions: list[str]}` (empty = proceed straight to synthesis) | PM's first chat message on a product |
+| 2 | **Synthesis Agent** | 1 (MVP) | Turn the conversation into a structured product document | Full chat `conversation` | `SynthesizedDoc{sections: list[Section]}` | PM's reply to Review's questions (or immediately, if none were asked) |
+| 3 | **Refinement Agent** | 2 | Expand or rewrite specific sections on request, without re-running intake | A prompt (e.g., "expand Success Metrics") + current `sections` | Updated `sections`, merged back into the document | PM submits a refinement prompt on an already-synthesized document |
+| 4 | **Validation Agent** | 2 | Judge whether each section actually satisfies its schema's intent, not just that it's non-empty | Document `sections` + its type's `required_sections` schema | `ValidationResult{valid: bool, checks: list[SectionCheck]}` | PM clicks "Review" on a synthesized document |
+| 5 | **Decomposition Agent** | 3 | Split a validated product into candidate features, then each accepted feature into candidate sub-features | Validated product `sections` (+ conversation for context) | `FeatureProposals{items: list[FeatureProposal]}` — titles + rationale, nothing written to disk yet | PM clicks "Generate Features" on a valid product |
+| 6 | **Architecture Evaluator Agent** | 3 | Give a technical feasibility verdict before a feature is considered buildable | A validated feature/sub-feature's `sections` | Feasibility verdict + notes (risks, dependencies, open technical questions) | A feature/sub-feature passes Validation |
+| 7 | **Implementation Planning Agent** | 4 | Turn an architecture-approved feature into an actual documented implementation plan, not just a go/no-go verdict | An architecture-approved feature/sub-feature + the Architecture Evaluator's notes | A structured implementation plan: ordered steps, dependencies between steps, rough scope per step | A feature/sub-feature passes Architecture Evaluation |
+| 8 | **Artifact Agent** | 4 | Generate downstream engineering artifacts from a planned feature | An implementation-planned feature/sub-feature | `ArtifactDraft{sections: list[Section]}` (user stories, test plans, acceptance criteria) | PM requests an artifact type for a planned feature |
+| 9 | **Jira/Confluence Agent** | 4 | Publish finished work into the tools the team actually executes in | A feature's implementation plan + its artifacts | Jira epic (product) / stories (features, one per plan step) + Confluence pages; IDs written back to local JSON | PM clicks "Publish" on a planned, artifact-complete feature |
+| 10 | **Prioritization Agent** | 5 | Propose a ranked order across the backlog | All features/sub-features + whatever signal exists (architecture risk, plan scope, PM input) | Ranked list with rationale per item | On demand, or after a batch of features clears the pipeline |
+| 11 | **Roadmap Synthesis Agent** | 5 | Roll up current state into a single readable roadmap | Product/feature statuses + priority scores | A roadmap view (grouped/sequenced summary) | On demand, or scheduled refresh |
+| 12 | **Stakeholder Update Agent** | 5 | Draft a status update tailored to a specific audience | Current document/pipeline state + target audience | Drafted update text (eng standup / exec summary / customer changelog) | PM requests an update for a given audience |
+| 13 | **Meeting Notes Agent** | 5 | Turn raw meeting notes into concrete follow-through | Pasted transcript/notes + the relevant product/feature docs | Proposed action items + suggested section edits (not auto-applied) | PM pastes notes and picks the related doc(s) |
 
 ### 8.1 Phase 2 — Refine & Structure
 
@@ -205,12 +208,13 @@ Turns a single validated product document into a real feature hierarchy, and add
 - **Decomposition Agent**: product → candidate features → (per accepted feature) candidate sub-features. PM confirms/deselects proposals at each level before real documents are created, same pattern as the earlier Breakdown Agent design, extended one level deeper.
 - **Architecture Evaluator Agent**: takes a validated feature/sub-feature and returns a feasibility verdict + notes (dependencies, risks, open technical questions). A feature that fails this gate goes back to the PM/engineering for rework rather than proceeding.
 
-### 8.3 Phase 4 — Produce & Publish
+### 8.3 Phase 4 — Plan, Produce & Publish
 
-Generates the artifacts engineering actually needs, then pushes everything out to the tools the team already works in.
+Turns an architecture-approved feature into an actual execution plan, generates the artifacts engineering needs, and pushes everything out to the tools the team already works in.
 
-- **Artifact Agent**: generates user stories, test plans, or acceptance criteria for any feature/sub-feature that clears architecture review.
-- **Jira/Confluence Agent**: creates a Jira epic per product and a story per feature/sub-feature, a Confluence page per doc/artifact, and persists the resulting Jira key / Confluence page URL back onto the local JSON record. This is the system's first external dependency — real auth credentials, network calls, and error handling the earlier phases deliberately avoid.
+- **Implementation Planning Agent**: takes an architecture-approved feature/sub-feature (plus the Architecture Evaluator's notes) and produces a documented implementation plan — ordered steps, dependencies between them, rough scope per step. This is new: previously only a feasibility verdict existed, with nothing that actually laid out *how* to build the thing.
+- **Artifact Agent**: generates user stories, test plans, or acceptance criteria for any feature/sub-feature that has an implementation plan.
+- **Jira/Confluence Agent**: creates a Jira epic per product and a story per plan step (not just one story per feature — the implementation plan's steps are what get broken into tickets), a Confluence page per doc/artifact, and persists the resulting Jira key / Confluence page URL back onto the local JSON record. This is the system's first external dependency — real auth credentials, network calls, and error handling the earlier phases deliberately avoid.
 
 ### 8.4 Phase 5 — Ongoing PM Operations
 
@@ -223,4 +227,4 @@ Once documents exist and are flowing through the pipeline, these agents support 
 
 ### 8.5 Handoff Mechanics (Phases 2-4)
 
-From Phase 2 onward, the "one route calls one agent" MVP pattern gives way to agents handing structured output directly to the next agent — via PydanticAI's agent delegation (an agent invoking the next as a tool call) or a thin orchestrator function calling them in sequence. A rejection at any gate (Validation, Architecture Evaluator) stops the chain there instead of continuing on to artifact generation or publishing, which means documents need an explicit **per-stage status** (e.g., `decomposed` → `validated` → `architecture-approved` → `artifacts-generated` → `published`) rather than the MVP's single `status` field, so a PM can see exactly where each feature sits and where it stalled.
+From Phase 2 onward, the "one route calls one agent" MVP pattern gives way to agents handing structured output directly to the next agent — via PydanticAI's agent delegation (an agent invoking the next as a tool call) or a thin orchestrator function calling them in sequence. A rejection at any gate (Validation, Architecture Evaluator) stops the chain there instead of continuing on to planning, artifact generation, or publishing, which means documents need an explicit **per-stage status** (e.g., `decomposed` → `validated` → `architecture-approved` → `implementation-planned` → `artifacts-generated` → `published`) rather than the MVP's single `status` field, so a PM can see exactly where each feature sits and where it stalled.
