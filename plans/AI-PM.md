@@ -169,29 +169,57 @@ frontend/
 
 ---
 
-## 8. Beyond the MVP (Later Phases, Not This Build)
+## 8. Beyond the MVP: Full Agent Catalog & Phase Roadmap
 
-Ideas from earlier planning that are explicitly out of scope for this MVP, kept here so they aren't lost:
+Everything from earlier planning, plus the natural remaining agents from the original "AI PM" vision, laid out as a complete catalog with a phase assigned to each. The MVP (Phase 1) is the only phase actually being built now; everything else is roadmap, sequenced so each phase's agents depend only on documents/data that already exist by the end of the previous phase.
 
-- **Multi-turn conversational intake** instead of one-shot input + one round of questions.
-- **Feature breakdown**: splitting a product into child feature documents, each with their own intake.
-- **Schema-driven validation**: required-fields JSON schemas per document type, with a dedicated Validation Agent and enforcement gates.
-- **Downstream artifact generation**: user stories, test plans, etc. generated from a validated document.
-- **Business "value" section** on feature docs, distinct from success metrics.
-- **Real login/auth** if this ever needs more than one user.
+### 8.0 Full Agent Catalog
 
-### 8.1 Later Phase: Full Multi-Agent Pipeline with Handoffs
-
-Once the MVP's two-agent loop is proven out, the natural next step is turning it into a proper pipeline: instead of one FastAPI route calling one agent, each agent hands its structured output directly to the next agent, in sequence, until the work reaches an external system. This adds three new agents beyond the ones already listed above:
-
-| Agent | Role | Input (from previous handoff) | Output (handed to next) |
+| # | Agent | Phase | Role |
 |---|---|---|---|
-| **Decomposition Agent** | Splits a synthesized product doc into candidate features, and each accepted feature into candidate sub-features (two levels deep, not just one) | Product `sections` | `Feature[]`, each with its own `SubFeature[]` |
-| **Validation Agent** *(from §8 above)* | Checks each feature/sub-feature doc against its required-fields schema | A feature or sub-feature's drafted `sections` | Pass/fail + issues; only passing docs continue down the pipeline |
-| **Architecture Evaluator Agent** | Reviews a validated feature/sub-feature for technical feasibility — flags dependencies, risks, or design concerns before it's considered buildable | A validated feature/sub-feature doc | Feasibility verdict + notes; blocks or annotates docs that need engineering rework |
-| **Artifact Agent** *(from §8 above)* | Generates user stories / test plans for docs that clear architecture review | An architecture-approved feature/sub-feature | `sections` for the generated artifact |
-| **Jira/Confluence Agent** | Publishes finished work to external tools: creates a Jira epic per product and a story per feature/sub-feature, creates a Confluence page per doc/artifact, and writes the resulting Jira key / Confluence page ID back onto the local JSON record | Finished feature/sub-feature docs + their artifacts | Jira issue keys, Confluence page URLs (persisted locally, not just returned) |
+| 1 | **Review Agent** | 1 (MVP) | Reads the one-shot product description, decides if it's enough, returns a capped list of clarifying questions (or none) |
+| 2 | **Synthesis Agent** | 1 (MVP) | Turns the description + Q&A answers into the finished product document (`sections`) |
+| 3 | **Refinement Agent** | 2 | Ad-hoc, prompt-driven expansion/rewrite of one or more sections after synthesis, without re-running the whole intake |
+| 4 | **Validation Agent** | 2 | Checks a document's sections against its type's required-fields schema, structurally and qualitatively |
+| 5 | **Decomposition Agent** | 3 | Splits a validated product into candidate features, and each accepted feature into candidate sub-features |
+| 6 | **Architecture Evaluator Agent** | 3 | Reviews a validated feature/sub-feature for technical feasibility, dependencies, and design risk before it's considered buildable |
+| 7 | **Artifact Agent** | 4 | Generates downstream artifacts (user stories, test plans, acceptance criteria) from an architecture-approved feature/sub-feature |
+| 8 | **Jira/Confluence Agent** | 4 | Publishes finished docs/artifacts as Jira epics/stories and Confluence pages; writes the resulting IDs back to local JSON |
+| 9 | **Prioritization Agent** | 5 | Scores and ranks features/sub-features (e.g., RICE-style) using whatever signal exists — architecture risk, artifact scope, PM-supplied inputs |
+| 10 | **Roadmap Synthesis Agent** | 5 | Rolls up product/feature statuses and priority scores into a readable roadmap view |
+| 11 | **Stakeholder Update Agent** | 5 | Drafts audience-specific status updates (eng standup, exec summary, customer changelog) from current document state |
+| 12 | **Meeting Notes Agent** | 5 | Converts a pasted meeting transcript/notes into action items and proposed section updates on the relevant product/feature docs |
 
-**Handoff mechanics**: rather than the MVP's "route calls exactly one agent," this pipeline uses PydanticAI's agent delegation pattern — each agent can invoke the next as a tool call (or a thin orchestrator function calls them in sequence), so a rejection partway through (e.g., Architecture Evaluator flags a feature) stops the handoff chain there instead of continuing on to artifact generation or publishing. This also means the pipeline needs an explicit **status per stage** (decomposed → validated → architecture-approved → artifacts-generated → published) rather than the MVP's single `status` field, so a PM can see where in the chain each feature currently sits and where it stalled.
+### 8.1 Phase 2 — Refine & Structure
 
-**New external dependency**: this phase is the first point where the system talks to something outside the local filesystem — Jira and Confluence APIs, which means auth credentials, network calls, and error handling that the local-only MVP deliberately avoids. Worth scoping as its own later phase rather than bundled in with the rest of this pipeline.
+Builds directly on the MVP's synthesized documents; no new external dependencies.
+
+- **Refinement Agent**: exposed via a `/documents/{id}/refine` endpoint (the old "Generate Panel" idea) — PM gives a prompt like "expand the Success Metrics section," agent returns updated `sections` merged back into the document. This is the natural answer to the MVP open question about editing after synthesis.
+- **Validation Agent**: required-fields JSON schema per document type (`schemas/*.json`), two-pass check (structural + LLM judgment on content quality), gating further progress until `valid: true`.
+
+### 8.2 Phase 3 — Decompose & Evaluate
+
+Turns a single validated product document into a real feature hierarchy, and adds a technical-feasibility gate before anything downstream gets built.
+
+- **Decomposition Agent**: product → candidate features → (per accepted feature) candidate sub-features. PM confirms/deselects proposals at each level before real documents are created, same pattern as the earlier Breakdown Agent design, extended one level deeper.
+- **Architecture Evaluator Agent**: takes a validated feature/sub-feature and returns a feasibility verdict + notes (dependencies, risks, open technical questions). A feature that fails this gate goes back to the PM/engineering for rework rather than proceeding.
+
+### 8.3 Phase 4 — Produce & Publish
+
+Generates the artifacts engineering actually needs, then pushes everything out to the tools the team already works in.
+
+- **Artifact Agent**: generates user stories, test plans, or acceptance criteria for any feature/sub-feature that clears architecture review.
+- **Jira/Confluence Agent**: creates a Jira epic per product and a story per feature/sub-feature, a Confluence page per doc/artifact, and persists the resulting Jira key / Confluence page URL back onto the local JSON record. This is the system's first external dependency — real auth credentials, network calls, and error handling the earlier phases deliberately avoid.
+
+### 8.4 Phase 5 — Ongoing PM Operations
+
+Once documents exist and are flowing through the pipeline, these agents support the PM's day-to-day work rather than moving a single document forward — this is where the very first version of this plan's "autonomous AI PM" vision (intake triage, backlog grooming, stakeholder updates) actually lands, now with real structured documents to operate on.
+
+- **Prioritization Agent**: scores/ranks features and sub-features so the PM has a proposed order, not just a flat backlog.
+- **Roadmap Synthesis Agent**: rolls up statuses + priority into a single roadmap view, refreshed as documents move through the pipeline.
+- **Stakeholder Update Agent**: drafts status updates tailored to different audiences from current document/pipeline state.
+- **Meeting Notes Agent**: turns raw meeting notes into action items and proposed edits to existing docs, rather than starting a new document from scratch.
+
+### 8.5 Handoff Mechanics (Phases 2-4)
+
+From Phase 2 onward, the "one route calls one agent" MVP pattern gives way to agents handing structured output directly to the next agent — via PydanticAI's agent delegation (an agent invoking the next as a tool call) or a thin orchestrator function calling them in sequence. A rejection at any gate (Validation, Architecture Evaluator) stops the chain there instead of continuing on to artifact generation or publishing, which means documents need an explicit **per-stage status** (e.g., `decomposed` → `validated` → `architecture-approved` → `artifacts-generated` → `published`) rather than the MVP's single `status` field, so a PM can see exactly where each feature sits and where it stalled.
