@@ -136,6 +136,22 @@ frontend/
       api.ts           # thin fetch wrapper for backend endpoints
 ```
 
+### How a Document Gets Added to the Screen
+
+1. User clicks **"New Document"** on the Document List page, which opens the New Document Dialog (shadcn `Dialog`).
+2. In the dialog, the user:
+   - Enters a **title**.
+   - Picks a **type** (`product_plan` / `feature`) via shadcn `Select`.
+   - Optionally enters an **initial prompt** (e.g., "Draft a feature doc for a faster checkout flow").
+3. On submit:
+   - If no prompt was given, the frontend calls `POST /documents` with just title/type. The backend creates a document with empty sections, assigns an `id`, writes `documents/<id>.json`, and appends an entry to `index.json`.
+   - If a prompt was given, the frontend calls `POST /documents` with title/type/prompt in one request; the backend creates the document, immediately calls the LLM (same path as `/generate`) to produce the first draft, and saves the populated document.
+4. The API response (the new document, including its `id`) is used to:
+   - Optimistically prepend a row to the Document List table (title, type, status "draft", "just now") without waiting for a full refetch.
+   - Navigate the user straight to `/documents/{id}` (the Document Editor), so the newly created — and possibly LLM-drafted — content is visible immediately.
+5. The Document Editor fetches `GET /documents/{id}` on mount (confirming what's on disk) and renders one `SectionEditor` per entry in `sections`, so any LLM-generated sections appear as pre-filled, editable cards right away.
+6. Any further edits or generate-panel requests call `PUT /documents/{id}` or `POST /documents/{id}/generate`; on success the editor updates in place and the Document List's "last updated" timestamp is refreshed the next time it's viewed (or via the same optimistic-update pattern if the list is kept mounted in a shared state/cache).
+
 ### Styling
 - Tailwind CSS for layout/utility classes.
 - shadcn/ui components (`Button`, `Card`, `Dialog`, `Textarea`, `Badge`, `Table`) for consistent UI primitives — no custom design system needed for v1.
