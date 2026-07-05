@@ -21,9 +21,9 @@ To keep all learning docs
 Comprehensive documentation of Large Language Model use cases for the AI-powered Digital Asset Research Platform.
 
 **Key Documents**:
-- **[LLM_Use_Cases_Research_Platform.md](./LLM_Use_Cases_Research_Platform.md)** - Detailed LLM use cases, implementation patterns, and best practices
-- **[DAP_Prod_Reqs.md](./DAP_Prod_Reqs.md)** - Product requirements with enhanced LLM agent capabilities
-- **[DAP_Agile_plan.md](./DAP_Agile_plan.md)** - Agile implementation plan for the platform
+- **[LLM_Use_Cases_Research_Platform.md](./dap-platform/LLM_Use_Cases_Research_Platform.md)** - Detailed LLM use cases, implementation patterns, and best practices
+- **[DAP_Prod_Reqs.md](./dap-platform/DAP_Prod_Reqs.md)** - Product requirements with enhanced LLM agent capabilities
+- **[DAP_Agile_plan.md](./dap-platform/DAP_Agile_plan.md)** - Agile implementation plan for the platform
 
 #### Overview
 
@@ -106,7 +106,7 @@ The platform employs specialized agents:
 - Security and compliance measures
 
 For complete details, implementation patterns, and example prompts, see:
-**[LLM_Use_Cases_Research_Platform.md](./LLM_Use_Cases_Research_Platform.md)**
+**[LLM_Use_Cases_Research_Platform.md](./dap-platform/LLM_Use_Cases_Research_Platform.md)**
 
 ---
 
@@ -175,8 +175,8 @@ This tool:
 
 ### 📚 Documentation
 
-- [QUIZ_ANALYSIS.md](QUIZ_ANALYSIS.md) - Comprehensive analysis report
-- [QUIZ_IMPROVEMENT_SUGGESTIONS.md](QUIZ_IMPROVEMENT_SUGGESTIONS.md) - Detailed improvement strategies
+- [QUIZ_ANALYSIS.md](quizzes/QUIZ_ANALYSIS.md) - Comprehensive analysis report
+- [QUIZ_IMPROVEMENT_SUGGESTIONS.md](quizzes/QUIZ_IMPROVEMENT_SUGGESTIONS.md) - Detailed improvement strategies
 
 ### 💡 Recommendations
 
@@ -1038,7 +1038,7 @@ The solution provided shows how LangChain enables orchestration of image resizin
 
 ### Files and Resources
 
-- **[LangChain_Image_Resizing_PDF_Workflow.md](LangChain_Image_Resizing_PDF_Workflow.md)** - Comprehensive documentation covering:
+- **[LangChain_Image_Resizing_PDF_Workflow.md](pdf-generation/LangChain_Image_Resizing_PDF_Workflow.md)** - Comprehensive documentation covering:
   - Problem description and use cases
   - Complete implementation guide
   - Code examples with explanations
@@ -1106,7 +1106,7 @@ def resize_image(image_path, max_width=800):
 ### Additional Documentation
 
 For complete implementation details, code examples, and best practices, see the full documentation:
-- [LangChain_Image_Resizing_PDF_Workflow.md](LangChain_Image_Resizing_PDF_Workflow.md)
+- [LangChain_Image_Resizing_PDF_Workflow.md](pdf-generation/LangChain_Image_Resizing_PDF_Workflow.md)
 
 ---
 
@@ -1216,7 +1216,7 @@ The documentation includes solutions for common issues:
 ### Complete Documentation
 
 For the full guide with detailed explanations, code examples, and best practices, see:
-- **[Aspose_PDF_Dynamic_Generation_Guide.md](Aspose_PDF_Dynamic_Generation_Guide.md)**
+- **[Aspose_PDF_Dynamic_Generation_Guide.md](pdf-generation/Aspose_PDF_Dynamic_Generation_Guide.md)**
 
 This comprehensive document includes:
 - Setup and configuration instructions
