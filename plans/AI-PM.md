@@ -3,18 +3,19 @@
 
 ### Executive Summary
 
-A deliberately small MVP: a product manager logs in, creates a product, and types up everything they know about it in one go. A **Review Agent** reads that input and asks a short, fixed round of clarifying questions (or none, if the input is already solid). The PM answers once, and a **Synthesis Agent** turns the input + answers into a finished product document. That's the whole loop — no multi-turn chat, no feature breakdown, no validation schemas, no downstream artifacts. Those ideas are noted in §8 as later phases, not part of this build. Stack stays React (shadcn + Tailwind) + Python (FastAPI) + JSON files on disk, with the two agents built as PydanticAI `Agent`s.
+A deliberately small MVP: a product manager logs in, creates a product, and describes it through a chat-style interface. A **Review Agent** reads the conversation and asks a short, capped round of clarifying questions in the chat (or none, if the input is already solid). The PM replies in the same thread, and a **Synthesis Agent** turns the whole conversation into a finished product document. It's conversational in presentation, but still just one capped round under the hood — no open-ended multi-turn refinement, no feature breakdown, no validation schemas, no downstream artifacts. Those bigger ideas are noted in §8 as later phases, not part of this build. Stack stays React (shadcn + Tailwind) + Python (FastAPI) + JSON files on disk, with the two agents built as PydanticAI `Agent`s.
 
 ---
 
 ## 1. MVP User Journey
 
 1. **Log in.** A simple screen asking for a name — no password, nothing persisted server-side. Just enough to feel like "logging in"; gates nothing.
-2. **Create a product.** PM clicks "New Product," gives it a title, and writes a single free-text description covering everything they know (problem, users, goals, whatever they have).
-3. **Review Agent runs automatically on submit.** It reads the description and decides: is this enough to write a solid product brief, or not? If not, it returns a short, capped list of clarifying questions (e.g., up to 3).
-4. **PM answers, once.** If there are questions, the PM sees them as a simple form (one field per question) and submits answers in a single round — no back-and-forth, no follow-up questions to the answers.
-5. **Synthesis Agent runs automatically on submit.** It takes the original description plus the Q&A pairs (or just the description, if there were no questions) and produces the finished product document as a set of sections.
-6. **PM sees the result.** The synthesized document is displayed and can be edited by hand. Done — that's the full MVP loop.
+2. **Create a product.** PM clicks "New Product," gives it a title, and lands in a chat thread for that product.
+3. **Describe it in the chat.** PM types their first message describing the product — problem, users, goals, whatever they have — same as talking to a person.
+4. **Review Agent replies in the thread.** It reads the message and decides: is this enough to write a solid product brief, or not? If not, it posts one assistant message in the chat containing a short, capped list of clarifying questions (e.g., up to 3, asked together in one message — not one at a time).
+5. **PM replies, once.** The PM types one reply covering the question(s) in the same thread — still a chat, but capped to this single round; there's no follow-up round of questions after that reply.
+6. **Synthesis Agent runs automatically after the reply** (or immediately after Review, if it asked nothing). It takes the full conversation and produces the finished product document as a set of sections, and posts a short confirmation message in the thread.
+7. **PM sees the result.** The synthesized document is shown alongside the chat thread and can be edited by hand. Done — that's the full MVP loop.
 
 ---
 
@@ -59,14 +60,11 @@ data/
   "id": "prod_001",
   "title": "Checkout Redesign",
   "status": "synthesized",
-  "raw_input": "We want to speed up our checkout flow, it currently takes too long and we're losing customers at payment...",
-  "questions": [
-    "What's the current average checkout completion time?",
-    "Which user segment is most affected?"
-  ],
-  "answers": [
-    "About 45 seconds average.",
-    "Mostly mobile users."
+  "conversation": [
+    { "role": "user", "content": "We want to speed up our checkout flow, it's too slow and we're losing customers at payment.", "timestamp": "2026-07-05T10:00:00Z" },
+    { "role": "assistant", "content": "Two quick questions: what's the current average checkout completion time, and which user segment is most affected?", "timestamp": "2026-07-05T10:01:00Z" },
+    { "role": "user", "content": "About 45 seconds average, mostly mobile users.", "timestamp": "2026-07-05T10:02:00Z" },
+    { "role": "assistant", "content": "Got it — drafted the product brief below.", "timestamp": "2026-07-05T10:02:30Z" }
   ],
   "sections": [
     { "heading": "Overview", "content": "..." },
@@ -74,11 +72,11 @@ data/
     { "heading": "Success Metrics", "content": "..." }
   ],
   "created_at": "2026-07-05T10:00:00Z",
-  "updated_at": "2026-07-05T10:05:00Z"
+  "updated_at": "2026-07-05T10:02:30Z"
 }
 ```
 
-`questions`/`answers` stay empty arrays if the Review Agent decided no follow-up was needed.
+`conversation` is the entire chat thread rendered in the UI — it starts with the PM's first message, gets one assistant message for the (possibly empty) clarifying-questions round, one more PM message replying, and a final short assistant confirmation once `sections` are synthesized. If the Review Agent asks nothing, the thread is just two messages: the PM's description and the assistant's confirmation.
 
 ---
 
@@ -88,19 +86,19 @@ data/
 
 | Agent | Module | `output_type` | Runs when |
 |---|---|---|---|
-| **Review Agent** | `agents/review.py` | `ReviewResult{questions: list[str]}` (empty = no follow-up needed) | Right after a product is created, on its `raw_input` |
-| **Synthesis Agent** | `agents/synthesis.py` | `SynthesizedDoc{sections: list[Section]}` where `Section{heading: str, content: str}` | Right after answers are submitted (or immediately after Review, if it asked nothing) |
+| **Review Agent** | `agents/review.py` | `ReviewResult{questions: list[str]}` (empty = no follow-up needed) | Right after the PM's first chat message, on the conversation so far |
+| **Synthesis Agent** | `agents/synthesis.py` | `SynthesizedDoc{sections: list[Section]}` where `Section{heading: str, content: str}` | Right after the PM's reply to the questions (or immediately after Review, if it asked nothing) |
 
-No shared orchestrator, no dependency-injected context beyond what's passed directly into the call — with only two agents and one linear path, the FastAPI routes just call them in sequence.
+No shared orchestrator, no dependency-injected context beyond what's passed directly into the call — with only two agents and one linear path, the FastAPI routes just call them in sequence. Both agents read the full `conversation` array rather than a single flat field, but the MVP still caps the exchange to one clarifying round — the routes never call Review a second time on the same product.
 
 ### API Endpoints
 
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/products` | List all products |
-| `GET` | `/products/{id}` | Get full product content |
-| `POST` | `/products` | Create a product (`title`, `raw_input`); runs the Review Agent immediately. If it returns questions, saves them and sets `status: "questions_pending"`. If not, runs the Synthesis Agent immediately and returns `status: "synthesized"` |
-| `POST` | `/products/{id}/answers` | Submit `answers` (same order as `questions`); runs the Synthesis Agent and sets `status: "synthesized"` |
+| `GET` | `/products/{id}` | Get full product content, including `conversation` |
+| `POST` | `/products` | Create a product (`title` only); starts with `status: "input"` and an empty `conversation` |
+| `POST` | `/products/{id}/messages` | Submit the PM's next chat message (`message`); appends it to `conversation`, then: if this is the **first** user message, runs the Review Agent (questions → append as one assistant message, `status: "questions_pending"`; no questions → run Synthesis immediately); if `status` was already `questions_pending`, this is the capped reply — always runs the Synthesis Agent, appends a confirmation message, and sets `status: "synthesized"` |
 | `PUT` | `/products/{id}` | Manual edits to `title`/`sections` after synthesis |
 
 ### File Layout
@@ -124,10 +122,10 @@ data/
 ### Pages / Views
 - **Login** (`/login`) — a name field and a "Continue" button (shadcn `Input` + `Button`); stores the name in local storage, no server call.
 - **Product List** (`/`) — table of products (title, status, last updated) with a "New Product" button.
-- **New Product Form** (`/products/new`) — title field + a large `Textarea` for the free-text description. Submitting calls `POST /products` and navigates to the product's page.
-- **Product Page** (`/products/{id}`) — renders based on `status`:
-  - `questions_pending`: a simple form with one `Textarea` per question in `questions`; submitting calls `POST /products/{id}/answers`.
-  - `synthesized`: the finished sections rendered as editable `Card`/`Textarea` blocks, with a "Save" button calling `PUT /products/{id}`.
+- **New Product Dialog** — shadcn `Dialog`, just a title field. Submitting calls `POST /products` (title only) and navigates straight to the new product's empty chat thread.
+- **Product Page** (`/products/{id}`) — a chat thread (shadcn `Card` + scrollable message list rendering `conversation`) always visible, plus:
+  - While `status` is `input`/`questions_pending`: a `Textarea` + `Button` at the bottom of the thread to send the next message — first the initial description, then (if the Review Agent asked something) the one capped reply. Every send posts to the same `POST /products/{id}/messages`.
+  - Once `status` is `synthesized`: the chat thread stays visible above, and the finished `sections` render below it as editable `Card`/`Textarea` blocks, with a "Save" button calling `PUT /products/{id}`.
 
 ### Component Structure
 ```
@@ -136,14 +134,16 @@ frontend/
     pages/
       Login.tsx
       ProductList.tsx
-      NewProductForm.tsx
-      ProductPage.tsx        # renders QuestionsForm or SectionEditor based on status
+      ProductPage.tsx        # chat thread + (once synthesized) the section editor below it
     components/
-      QuestionsForm.tsx
+      NewProductDialog.tsx
+      ChatThread.tsx          # renders `conversation`, plus the message input while not yet synthesized
       SectionEditor.tsx
     lib/
       api.ts               # thin fetch wrapper for backend endpoints
 ```
+
+Note: creating a product now takes just a `title` up front (via `NewProductDialog`); the PM's actual product description is typed as the *first chat message* on the resulting Product Page, not in the creation dialog itself — this keeps the whole intake, from first message onward, inside one consistent chat thread rather than splitting it across a form and a chat.
 
 ---
 
@@ -153,19 +153,20 @@ frontend/
 |---|---|
 | 1 | Scaffold backend: FastAPI app, `storage.py`, `data/` with empty `index.json` |
 | 2 | Build the Review Agent and Synthesis Agent (PydanticAI) |
-| 3 | Implement `POST /products` (create + run Review, and Synthesis if no questions) and `POST /products/{id}/answers` (run Synthesis) |
+| 3 | Implement `POST /products` (create, empty conversation) and `POST /products/{id}/messages` (first message → Review, and Synthesis if no questions; capped reply → Synthesis) |
 | 4 | Implement `GET /products`, `GET /products/{id}`, `PUT /products/{id}` |
 | 5 | Scaffold frontend: Vite + React + Tailwind + shadcn, `api.ts` client |
 | 6 | Build Login screen (local-storage-only) and Product List |
-| 7 | Build New Product Form, Questions Form, and the synthesized Section Editor view |
+| 7 | Build New Product Dialog, the ChatThread component, and the synthesized Section Editor view |
 
 ---
 
 ## 7. Open Questions
 
-- Cap on the number of clarifying questions the Review Agent can ask (plan assumes ~3) — worth confirming.
-- What happens if the PM leaves an answer blank — does Synthesis just work with what's given, or is a blank field re-prompted (MVP assumption: it just proceeds)?
+- Cap on the number of clarifying questions the Review Agent can ask (plan assumes ~3, asked together in one chat message) — worth confirming.
+- What happens if the PM's reply doesn't clearly address every question asked — does Synthesis just work with whatever's in the conversation, or is there a re-prompt (MVP assumption: it just proceeds; true multi-turn follow-up is deferred, see §8)?
 - Whether "Login" needs to gate anything at all for a single local user, or is purely cosmetic for now.
+- Whether the chat input should stay visible/disabled once `status` is `synthesized` (in case the PM wants to add more context later) or disappear entirely in favor of the Section Editor's manual edits.
 
 ---
 
@@ -177,8 +178,8 @@ Everything from earlier planning, plus the natural remaining agents from the ori
 
 | # | Agent | Phase | Role |
 |---|---|---|---|
-| 1 | **Review Agent** | 1 (MVP) | Reads the one-shot product description, decides if it's enough, returns a capped list of clarifying questions (or none) |
-| 2 | **Synthesis Agent** | 1 (MVP) | Turns the description + Q&A answers into the finished product document (`sections`) |
+| 1 | **Review Agent** | 1 (MVP) | Reads the chat conversation, decides if it's enough, returns a capped list of clarifying questions (or none) |
+| 2 | **Synthesis Agent** | 1 (MVP) | Turns the full chat conversation into the finished product document (`sections`) |
 | 3 | **Refinement Agent** | 2 | Ad-hoc, prompt-driven expansion/rewrite of one or more sections after synthesis, without re-running the whole intake |
 | 4 | **Validation Agent** | 2 | Checks a document's sections against its type's required-fields schema, structurally and qualitatively |
 | 5 | **Decomposition Agent** | 3 | Splits a validated product into candidate features, and each accepted feature into candidate sub-features |
