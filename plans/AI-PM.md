@@ -49,7 +49,7 @@ This is the concrete, end-to-end story the rest of this plan implements:
 | Frontend | React + Vite, shadcn/ui, Tailwind CSS |
 | Backend | Python (FastAPI) |
 | Storage | JSON files on disk (one file per document + an index file) |
-| LLM | Provider-agnostic client in backend (Claude by default), used for conversation, drafting, validation review, and artifact generation |
+| Agent Framework | [PydanticAI](https://ai.pydantic.dev/) — one typed `Agent` per responsibility, each with a Pydantic `output_type` (Claude as the default model) |
 
 ---
 
@@ -149,10 +149,20 @@ A `feature` document has the same shape, but `type: "feature"`, `product_id` set
 ### Responsibilities
 - Read/write JSON files under `data/` (no ORM, no DB driver).
 - Expose a small REST API for the frontend.
-- Drive the conversational intake: given a document's conversation so far, ask the LLM either for the next clarifying question or (once satisfied) for drafted sections.
-- Split a validated product into candidate features and, on confirmation, create real feature documents.
-- Validate a document's sections against its type's schema, both structurally and via an LLM review pass.
-- Generate downstream artifacts from a validated document using per-artifact-type prompt templates.
+- Drive the conversational intake, feature breakdown, validation, and artifact generation by delegating to the PydanticAI agents below — routes stay thin and just call an agent, then persist its structured output.
+
+### Agents (PydanticAI)
+
+Each LLM-driven responsibility is its own `Agent` with a Pydantic `output_type`, so the backend never hand-parses free-text LLM output. All agents share one `PMContext` dependency (the current document, its parent product if any, and its schema) via PydanticAI's dependency injection.
+
+| Agent | Module | `output_type` | Used by |
+|---|---|---|---|
+| **Intake Agent** | `agents/intake.py` | `IntakeResult = NextQuestion \| DraftedSections` — a discriminated union; `NextQuestion{question: str}` or `DraftedSections{sections: list[Section]}` | `/documents/{id}/messages` (§7) |
+| **Validation Agent** | `agents/validation.py` | `ValidationResult{valid: bool, checks: list[SectionCheck]}` where `SectionCheck{field: str, ok: bool, message: str}` | `/documents/{id}/validate` (§9) |
+| **Breakdown Agent** | `agents/breakdown.py` | `FeatureProposals{items: list[FeatureProposal]}` where `FeatureProposal{title: str, rationale: str}` | `/documents/{id}/features/propose` (§8) |
+| **Artifact Agent** | `agents/artifact.py` | `ArtifactDraft{sections: list[Section]}` — same shape as a document's `sections`, templated per `artifact_type` | `/documents/{id}/artifacts` (§10) |
+
+Each agent is a plain, independent `Agent(model, output_type=..., system_prompt=...)` — no shared orchestrator agent for v1; a FastAPI route calls exactly one agent and persists the result. This keeps the mental model simple (routes stay thin, agents stay single-purpose) and leaves room to introduce an orchestrator agent later if flows need to chain agent calls without a round-trip to the frontend in between.
 
 ### API Endpoints
 
@@ -176,11 +186,14 @@ A `feature` document has the same shape, but `type: "feature"`, `product_id` set
 backend/
   main.py            # FastAPI app, route definitions
   storage.py          # read/write helpers for index.json and documents/*.json
-  conversation.py      # drives intake turns: next-question vs. draft-sections decision
-  breakdown.py         # product -> candidate features -> confirmed feature documents
-  llm.py              # LLM client wrapper (prompt templates, calls out to model)
-  validation.py        # loads schemas/*.json, runs structural + LLM-based validation
-  models.py            # Pydantic schemas for request/response validation
+  agents/
+    deps.py            # shared PMContext dependency (document, parent product, schema)
+    intake.py           # Intake Agent + IntakeResult/NextQuestion/DraftedSections models
+    validation.py        # Validation Agent + ValidationResult/SectionCheck models (wraps the
+                         # deterministic structural check + the agent's qualitative pass)
+    breakdown.py         # Breakdown Agent + FeatureProposals/FeatureProposal models
+    artifact.py           # Artifact Agent + ArtifactDraft model
+  models.py            # Pydantic schemas for request/response validation (API layer, not agent output)
 data/
   index.json
   documents/
@@ -235,10 +248,10 @@ This is how a document (product or feature) moves from a blank slate to drafted 
 
 1. Document is created with `status: "intake"` and an empty `conversation`. (For a feature created via breakdown confirmation, `conversation` is pre-seeded with an initial assistant message giving the feature's rationale, so the PM's first reply is already in context.)
 2. PM sends a message → `POST /documents/{id}/messages` with `{ message }`.
-3. Backend (`conversation.py`) appends `{ role: "user", content: message }` to `conversation`, then calls the LLM with: the full conversation so far, the document's type schema (`required_sections`), and — for a feature — the parent product's drafted sections for context.
-4. The LLM returns one of two things:
-   - **Another question**: appended as `{ role: "assistant", content: "..." }`; status stays `intake`; frontend just renders the new message.
-   - **"I have enough"**: the LLM instead returns drafted `sections` matching the schema's `required_sections`. Backend saves these to the document, flips `status` to `draft`, and returns the drafted sections.
+3. Backend appends `{ role: "user", content: message }` to `conversation`, then runs the **Intake Agent** (`agents/intake.py`) with the full conversation, the document's type schema (`required_sections`), and — for a feature — the parent product's drafted sections, all via the shared `PMContext` dependency.
+4. Thanks to the agent's `IntakeResult = NextQuestion | DraftedSections` output type, the route gets back one of exactly two shapes — no free-text parsing:
+   - **`NextQuestion`**: appended as `{ role: "assistant", content: question }`; status stays `intake`; frontend just renders the new message.
+   - **`DraftedSections`**: backend saves `sections` (already validated against the `Section` Pydantic model) to the document, flips `status` to `draft`, and returns the drafted sections.
 5. Backend writes the updated document to disk and updates `updated_at` in both the document and `index.json` on every turn.
 6. Frontend swaps from Intake Chat to Section Editor the moment `status` comes back as `draft`, showing the drafted sections as pre-filled, editable cards.
 
@@ -249,7 +262,7 @@ This is how a document (product or feature) moves from a blank slate to drafted 
 Covers steps 7-9 of the User Journey — splitting a validated product into features.
 
 1. PM clicks **"Generate Features"** on a valid (`validation.valid: true`) product page.
-2. Frontend calls `POST /documents/{id}/features/propose`. Backend (`breakdown.py`) sends the product's conversation + drafted sections to the LLM with an instruction to propose discrete, non-overlapping features, and returns `[{ title, rationale }]` — nothing is written to disk yet.
+2. Frontend calls `POST /documents/{id}/features/propose`. Backend runs the **Breakdown Agent** (`agents/breakdown.py`) with the product's conversation + drafted sections; its `FeatureProposals{items: list[FeatureProposal]}` output type guarantees a clean `[{ title, rationale }]` list back — nothing is written to disk yet.
 3. Frontend shows the proposals as a checklist (all checked by default) in the Feature Breakdown Panel.
 4. PM deselects any unwanted proposals and clicks **"Confirm."** Frontend calls `POST /documents/{id}/features/confirm` with the confirmed subset.
 5. For each confirmed item, the backend creates a new `feature` document: `product_id` set to the parent, `status: "intake"`, and `conversation` pre-seeded with an assistant message stating the feature's rationale (so the PM's first message continues that thread rather than starting cold). Each gets its own entry in `index.json`.
@@ -262,8 +275,8 @@ Covers steps 7-9 of the User Journey — splitting a validated product into feat
 
 Each document `type` has a required-fields schema stored as JSON under `schemas/` (see §4). Validation happens in two passes, both triggered by `/documents/{id}/validate`:
 
-1. **Structural check** (`validation.py`, no LLM call): confirms every heading in the type's `required_sections` exists in the document's `sections` array and has non-empty `content`. Anything missing/blank goes straight into `missing_fields`.
-2. **LLM review pass**: for structurally-present sections, the backend sends each section's content to the LLM with an instruction to judge whether it actually satisfies that field's intent (e.g., "Success Metrics" must contain a measurable target, not just prose). The LLM returns `{ field, ok, message }` per section; `ok: false` entries are appended to `issues`.
+1. **Structural check** (plain Python, no LLM call, run before the agent): confirms every heading in the type's `required_sections` exists in the document's `sections` array and has non-empty `content`. Anything missing/blank goes straight into `missing_fields`.
+2. **Validation Agent review pass** (`agents/validation.py`): for structurally-present sections, the agent is given each section's content and asked to judge whether it actually satisfies that field's intent (e.g., "Success Metrics" must contain a measurable target, not just prose). Its `ValidationResult{valid: bool, checks: list[SectionCheck]}` output type guarantees one `SectionCheck{field, ok, message}` per section; `ok: false` entries become `issues`.
 3. Backend combines both passes into one result, writes it to the document's `validation` object, and returns it.
 4. **Enforcement**: "Generate Features" (product only), "Generate Artifacts," and the "Mark as In Review/Approved" status transition are disabled in the UI while `validation.valid` is `false`, and the backend independently rejects those operations with `422` on an invalid document — so the check can't be bypassed by calling the API directly.
 5. PM edits the flagged sections (manually or via the Generate Panel) and re-runs Review until `valid` is `true`.
@@ -286,7 +299,7 @@ Once a document (typically a feature) passes validation, the PM can generate fur
 Flow:
 1. PM clicks **"Generate Artifacts"** and picks a type from `GET /artifact-types?type={document.type}`.
 2. Frontend calls `POST /documents/{id}/artifacts` with `{ artifact_type }`.
-3. Backend re-checks `validation.valid` is `true`, loads the matching prompt template, and calls the LLM with the source document's full content as context.
+3. Backend re-checks `validation.valid` is `true`, then runs the **Artifact Agent** (`agents/artifact.py`) with the matching prompt template (from `artifact_types.json`) as its system prompt and the source document's full content as context; its `ArtifactDraft{sections: list[Section]}` output type comes back already shaped like a document's `sections`.
 4. The response is saved as a new document (`source_document_id` set to the originator, `artifact_type` set), with its own `index.json` entry.
 5. The source document's `linked_artifacts` array is updated with the new artifact's id.
 6. Frontend shows the new artifact under a "Related Artifacts" list on the source document's page.
@@ -301,12 +314,12 @@ Flow:
 | 2 | Implement CRUD endpoints for documents (list w/ `type`/`product_id` filters, get, create, update, delete) |
 | 3 | Scaffold frontend: Vite + React + Tailwind + shadcn setup, `api.ts` client |
 | 4 | Build Product List page (`GET /documents?type=product`) and New Product Dialog |
-| 5 | Add LLM client (`llm.py`) and `conversation.py`; implement `/documents/{id}/messages` |
+| 5 | Set up PydanticAI + shared `PMContext` dependency (`agents/deps.py`); build the **Intake Agent** and `/documents/{id}/messages` |
 | 6 | Build Intake Chat component; wire Document Page to switch between Intake Chat and Section Editor based on `status` |
 | 7 | Build Section Editor + Generate Panel, wired to `GET/PUT /documents/{id}` and `/documents/{id}/generate` |
-| 8 | Author `schemas/*.json`; implement `validation.py` and `/documents/{id}/validate`; build Validation Panel with enforcement |
-| 9 | Implement `breakdown.py` and `/documents/{id}/features/propose` + `/confirm`; build Feature Breakdown Panel and Feature List |
-| 10 | Author `artifact_types.json` and prompt templates; implement `/artifact-types` and `/documents/{id}/artifacts`; build Artifacts Panel |
+| 8 | Author `schemas/*.json`; build the **Validation Agent** (plus the plain-Python structural check) and `/documents/{id}/validate`; build Validation Panel with enforcement |
+| 9 | Build the **Breakdown Agent** and `/documents/{id}/features/propose` + `/confirm`; build Feature Breakdown Panel and Feature List |
+| 10 | Author `artifact_types.json` and prompt templates; build the **Artifact Agent** and `/artifact-types` + `/documents/{id}/artifacts`; build Artifacts Panel |
 | 11 | Polish: status badges, delete confirmation, basic empty/error states |
 
 ---
@@ -316,5 +329,6 @@ Flow:
 - Which LLM provider/model to default to, and how API keys are supplied locally (env var vs. config file).
 - How the LLM decides it "has enough" during intake — a fixed minimum turn count, a confidence signal from the model itself, or letting the PM force it to draft early with a "Draft now" button.
 - Whether a PM should be able to manually add a feature to a product outside the breakdown flow (the `POST /documents` endpoint already supports `product_id`, so this is possible — just needs a UI entry point).
-- How strict the LLM validation review pass should be by default, to avoid blocking users on borderline content.
+- How strict the Validation Agent's review pass should be by default, to avoid blocking users on borderline content.
 - Whether artifact documents (user stories, test plans) should be editable/re-validatable like primary documents, or treated as read-only outputs.
+- Whether to introduce a single orchestrator agent once flows need to chain multiple agents server-side (e.g., auto-running validation right after intake drafts sections), versus keeping each route call exactly one agent as planned for v1.
