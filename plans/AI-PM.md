@@ -179,3 +179,19 @@ Ideas from earlier planning that are explicitly out of scope for this MVP, kept 
 - **Downstream artifact generation**: user stories, test plans, etc. generated from a validated document.
 - **Business "value" section** on feature docs, distinct from success metrics.
 - **Real login/auth** if this ever needs more than one user.
+
+### 8.1 Later Phase: Full Multi-Agent Pipeline with Handoffs
+
+Once the MVP's two-agent loop is proven out, the natural next step is turning it into a proper pipeline: instead of one FastAPI route calling one agent, each agent hands its structured output directly to the next agent, in sequence, until the work reaches an external system. This adds three new agents beyond the ones already listed above:
+
+| Agent | Role | Input (from previous handoff) | Output (handed to next) |
+|---|---|---|---|
+| **Decomposition Agent** | Splits a synthesized product doc into candidate features, and each accepted feature into candidate sub-features (two levels deep, not just one) | Product `sections` | `Feature[]`, each with its own `SubFeature[]` |
+| **Validation Agent** *(from §8 above)* | Checks each feature/sub-feature doc against its required-fields schema | A feature or sub-feature's drafted `sections` | Pass/fail + issues; only passing docs continue down the pipeline |
+| **Architecture Evaluator Agent** | Reviews a validated feature/sub-feature for technical feasibility — flags dependencies, risks, or design concerns before it's considered buildable | A validated feature/sub-feature doc | Feasibility verdict + notes; blocks or annotates docs that need engineering rework |
+| **Artifact Agent** *(from §8 above)* | Generates user stories / test plans for docs that clear architecture review | An architecture-approved feature/sub-feature | `sections` for the generated artifact |
+| **Jira/Confluence Agent** | Publishes finished work to external tools: creates a Jira epic per product and a story per feature/sub-feature, creates a Confluence page per doc/artifact, and writes the resulting Jira key / Confluence page ID back onto the local JSON record | Finished feature/sub-feature docs + their artifacts | Jira issue keys, Confluence page URLs (persisted locally, not just returned) |
+
+**Handoff mechanics**: rather than the MVP's "route calls exactly one agent," this pipeline uses PydanticAI's agent delegation pattern — each agent can invoke the next as a tool call (or a thin orchestrator function calls them in sequence), so a rejection partway through (e.g., Architecture Evaluator flags a feature) stops the handoff chain there instead of continuing on to artifact generation or publishing. This also means the pipeline needs an explicit **status per stage** (decomposed → validated → architecture-approved → artifacts-generated → published) rather than the MVP's single `status` field, so a PM can see where in the chain each feature currently sits and where it stalled.
+
+**New external dependency**: this phase is the first point where the system talks to something outside the local filesystem — Jira and Confluence APIs, which means auth credentials, network calls, and error handling that the local-only MVP deliberately avoids. Worth scoping as its own later phase rather than bundled in with the rest of this pipeline.
