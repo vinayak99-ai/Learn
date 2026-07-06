@@ -238,7 +238,7 @@ The technical-feasibility gate between "documented" and "buildable."
 
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
-| Feasibility evaluation *(formerly Architecture Evaluator Agent)* | 3 | A validated feature/sub-feature's `sections` | Feasibility verdict + notes (risks, dependencies, open technical questions) | A feature/sub-feature passes Validation |
+| Feasibility evaluation *(formerly Architecture Evaluator Agent)* | 3 | A validated feature/sub-feature's `sections` | Feasibility verdict + notes (risks, dependencies, open technical questions) | A feature/sub-feature passes the Documentation Agent's validation sub-capability |
 
 A feature that fails this gate goes back to the PM/engineering for rework rather than proceeding. **Optionally grounded by the Domain Knowledge Agent (§8.9)** once that's adopted — this is one of the two consumers of it, since a feasibility call is exactly where "generic best practice" and "what this org's systems can actually support" are most likely to diverge.
 
