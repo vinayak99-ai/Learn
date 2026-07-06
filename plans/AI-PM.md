@@ -193,6 +193,7 @@ Every agent's role documented consistently — what it takes in, what it hands b
 | 11 | **Roadmap Synthesis Agent** | 5 | Roll up current state into a single readable roadmap | Product/feature statuses + priority scores | A roadmap view (grouped/sequenced summary) | On demand, or scheduled refresh |
 | 12 | **Stakeholder Update Agent** | 5 | Draft a status update tailored to a specific audience | Current document/pipeline state + target audience | Drafted update text (eng standup / exec summary / customer changelog) | PM requests an update for a given audience |
 | 13 | **Meeting Notes Agent** | 5 | Turn raw meeting notes into concrete follow-through | Pasted transcript/notes + the relevant product/feature docs | Proposed action items + suggested section edits (not auto-applied) | PM pastes notes and picks the related doc(s) |
+| 14 | **Domain Knowledge Agent** | 3 | Ground other agents' output in org-specific knowledge an LLM can't know from training — past decisions, internal terminology, existing systems — instead of only general domain knowledge | A query from another agent (e.g., "has checkout latency been addressed before?") + the internal knowledge base | Relevant excerpts/citations from past docs, decisions, or architecture notes | Called mid-task by another agent (not a standalone pipeline step) |
 
 ### 8.1 Phase 2 — Refine & Structure
 
@@ -203,10 +204,12 @@ Builds directly on the MVP's synthesized documents; no new external dependencies
 
 ### 8.2 Phase 3 — Decompose & Evaluate
 
-Turns a single validated product document into a real feature hierarchy, and adds a technical-feasibility gate before anything downstream gets built.
+Turns a single validated product document into a real feature hierarchy, and adds a technical-feasibility gate before anything downstream gets built. This is also the first phase where an agent's answer needs to depend on knowledge that isn't in the document or the LLM's training data — so it's where the Domain Knowledge Agent enters, even though it isn't part of the sequential handoff chain the other two agents are.
 
 - **Decomposition Agent**: product → candidate features → (per accepted feature) candidate sub-features. PM confirms/deselects proposals at each level before real documents are created, same pattern as the earlier Breakdown Agent design, extended one level deeper.
 - **Architecture Evaluator Agent**: takes a validated feature/sub-feature and returns a feasibility verdict + notes (dependencies, risks, open technical questions). A feature that fails this gate goes back to the PM/engineering for rework rather than proceeding.
+- **Domain Knowledge Agent**: not a handoff stage — a service the other two call into mid-task. Decomposition queries it to avoid proposing a feature that was already tried and rejected; Architecture Evaluator queries it to check a proposal against the org's *actual* existing systems and past architecture decisions, not just generic best practice. Introduced here specifically because feasibility and structuring are where "the LLM's general knowledge" and "what this org actually already has/knows" are most likely to diverge — earlier phases (drafting, refining) are lower-stakes if ungrounded, but a wrong feasibility call compounds through every phase after it.
+  - Requires an actual knowledge store (embeddings/vector search over internal docs, architecture notes, past decisions) — a real step up in infrastructure from every other agent here, which only ever reads the current document plus the LLM's own knowledge. That store also needs a source and a way to stay current, or it becomes a source of false confidence rather than grounding. **Not part of the MVP.**
 
 ### 8.3 Phase 4 — Plan, Produce & Publish
 
@@ -228,3 +231,5 @@ Once documents exist and are flowing through the pipeline, these agents support 
 ### 8.5 Handoff Mechanics (Phases 2-4)
 
 From Phase 2 onward, the "one route calls one agent" MVP pattern gives way to agents handing structured output directly to the next agent — via PydanticAI's agent delegation (an agent invoking the next as a tool call) or a thin orchestrator function calling them in sequence. A rejection at any gate (Validation, Architecture Evaluator) stops the chain there instead of continuing on to planning, artifact generation, or publishing, which means documents need an explicit **per-stage status** (e.g., `decomposed` → `validated` → `architecture-approved` → `implementation-planned` → `artifacts-generated` → `published`) rather than the MVP's single `status` field, so a PM can see exactly where each feature sits and where it stalled.
+
+The **Domain Knowledge Agent** is the one exception to this handoff chain: it doesn't sit at a stage or produce a status transition of its own. Decomposition and Architecture Evaluator call it as a tool mid-execution, the way any agent might call a function, and its answer just informs the output those two agents were already going to produce.
