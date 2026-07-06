@@ -3,7 +3,7 @@
 
 ### Executive Summary
 
-A deliberately small MVP: a product manager logs in, creates a product, and describes it through a chat-style interface. A **Review Agent** reads the conversation and asks a short, capped round of clarifying questions in the chat (or none, if the input is already solid). The PM replies in the same thread, and a **Synthesis Agent** turns the whole conversation into a finished product document. It's conversational in presentation, but still just one capped round under the hood — no open-ended multi-turn refinement, no feature breakdown, no validation schemas, no downstream artifacts. Those bigger ideas are noted in §8 as later phases, not part of this build. Stack stays React (shadcn + Tailwind) + Python (FastAPI) + JSON files on disk, with the two agents built as PydanticAI `Agent`s.
+A deliberately small MVP: a product manager logs in, creates a product, and describes it through a chat-style interface. An **Analysis Agent** reads the conversation and asks a short, capped round of clarifying questions in the chat (or none, if the input is already solid). The PM replies in the same thread, and a **Documentation Agent** turns the whole conversation into a finished product document. It's conversational in presentation, but still just one capped round under the hood — no open-ended multi-turn refinement, no feature breakdown, no validation schemas, no downstream artifacts. Those bigger ideas are noted in §8 as later phases, organized around a broader framework of 8 function-based agents (plus a 9th for later adoption), not part of this build. Stack stays React (shadcn + Tailwind) + Python (FastAPI) + JSON files on disk, with each agent built as a PydanticAI `Agent`.
 
 ---
 
@@ -12,9 +12,9 @@ A deliberately small MVP: a product manager logs in, creates a product, and desc
 1. **Log in.** A simple screen asking for a name — no password, nothing persisted server-side. Just enough to feel like "logging in"; gates nothing.
 2. **Create a product.** PM clicks "New Product," gives it a title, and lands in a chat thread for that product.
 3. **Describe it in the chat.** PM types their first message describing the product — problem, users, goals, whatever they have — same as talking to a person.
-4. **Review Agent replies in the thread.** It reads the message and decides: is this enough to write a solid product brief, or not? If not, it posts one assistant message in the chat containing a short, capped list of clarifying questions (e.g., up to 3, asked together in one message — not one at a time).
+4. **Analysis Agent replies in the thread.** It reads the message and decides: is this enough to write a solid product brief, or not? If not, it posts one assistant message in the chat containing a short, capped list of clarifying questions (e.g., up to 3, asked together in one message — not one at a time).
 5. **PM replies, once.** The PM types one reply covering the question(s) in the same thread — still a chat, but capped to this single round; there's no follow-up round of questions after that reply.
-6. **Synthesis Agent runs automatically after the reply** (or immediately after Review, if it asked nothing). It takes the full conversation and produces the finished product document as a set of sections, and posts a short confirmation message in the thread.
+6. **Documentation Agent runs automatically after the reply** (or immediately after Analysis, if it asked nothing). It takes the full conversation and produces the finished product document as a set of sections, and posts a short confirmation message in the thread.
 7. **PM sees the result.** The synthesized document is shown alongside the chat thread and can be edited by hand. Done — that's the full MVP loop.
 
 ---
@@ -26,7 +26,7 @@ A deliberately small MVP: a product manager logs in, creates a product, and desc
 | Frontend | React + Vite, shadcn/ui, Tailwind CSS |
 | Backend | Python (FastAPI) |
 | Storage | JSON files on disk (one file per product + an index file) |
-| Agents | PydanticAI — exactly two agents, each with a Pydantic `output_type` (Claude as the default model) |
+| Agents | PydanticAI — the MVP uses two of the framework's 8 broad agents (Analysis, Documentation), each with a Pydantic `output_type` (Claude as the default model) |
 
 ---
 
@@ -76,7 +76,7 @@ data/
 }
 ```
 
-`conversation` is the entire chat thread rendered in the UI — it starts with the PM's first message, gets one assistant message for the (possibly empty) clarifying-questions round, one more PM message replying, and a final short assistant confirmation once `sections` are synthesized. If the Review Agent asks nothing, the thread is just two messages: the PM's description and the assistant's confirmation.
+`conversation` is the entire chat thread rendered in the UI — it starts with the PM's first message, gets one assistant message for the (possibly empty) clarifying-questions round, one more PM message replying, and a final short assistant confirmation once `sections` are synthesized. If the Analysis Agent asks nothing, the thread is just two messages: the PM's description and the assistant's confirmation.
 
 ---
 
@@ -86,10 +86,10 @@ data/
 
 | Agent | Module | `output_type` | Runs when |
 |---|---|---|---|
-| **Review Agent** | `agents/review.py` | `ReviewResult{questions: list[str]}` (empty = no follow-up needed) | Right after the PM's first chat message, on the conversation so far |
-| **Synthesis Agent** | `agents/synthesis.py` | `SynthesizedDoc{sections: list[Section]}` where `Section{heading: str, content: str}` | Right after the PM's reply to the questions (or immediately after Review, if it asked nothing) |
+| **Analysis Agent** (intake sub-capability) | `agents/analysis.py` | `AnalysisResult{questions: list[str]}` (empty = no follow-up needed) | Right after the PM's first chat message, on the conversation so far |
+| **Documentation Agent** (synthesis sub-capability) | `agents/documentation.py` | `DocumentationDraft{sections: list[Section]}` where `Section{heading: str, content: str}` | Right after the PM's reply to the questions (or immediately after Analysis, if it asked nothing) |
 
-No shared orchestrator, no dependency-injected context beyond what's passed directly into the call — with only two agents and one linear path, the FastAPI routes just call them in sequence. Both agents read the full `conversation` array rather than a single flat field, but the MVP still caps the exchange to one clarifying round — the routes never call Review a second time on the same product.
+These are the MVP-relevant slices of two of the framework's 8 broad agents (§8) — Analysis and Documentation each gain more sub-capabilities in later phases, but the MVP only needs intake and synthesis. No shared orchestrator, no dependency-injected context beyond what's passed directly into the call — with only two agents and one linear path, the FastAPI routes just call them in sequence. Both agents read the full `conversation` array rather than a single flat field, but the MVP still caps the exchange to one clarifying round — the routes never call Analysis a second time on the same product.
 
 ### API Endpoints
 
@@ -98,7 +98,7 @@ No shared orchestrator, no dependency-injected context beyond what's passed dire
 | `GET` | `/products` | List all products |
 | `GET` | `/products/{id}` | Get full product content, including `conversation` |
 | `POST` | `/products` | Create a product (`title` only); starts with `status: "input"` and an empty `conversation` |
-| `POST` | `/products/{id}/messages` | Submit the PM's next chat message (`message`); appends it to `conversation`, then: if this is the **first** user message, runs the Review Agent (questions → append as one assistant message, `status: "questions_pending"`; no questions → run Synthesis immediately); if `status` was already `questions_pending`, this is the capped reply — always runs the Synthesis Agent, appends a confirmation message, and sets `status: "synthesized"` |
+| `POST` | `/products/{id}/messages` | Submit the PM's next chat message (`message`); appends it to `conversation`, then: if this is the **first** user message, runs the Analysis Agent (questions → append as one assistant message, `status: "questions_pending"`; no questions → run Documentation immediately); if `status` was already `questions_pending`, this is the capped reply — always runs the Documentation Agent, appends a confirmation message, and sets `status: "synthesized"` |
 | `PUT` | `/products/{id}` | Manual edits to `title`/`sections` after synthesis |
 
 ### File Layout
@@ -107,8 +107,8 @@ backend/
   main.py            # FastAPI app, route definitions
   storage.py          # read/write helpers for index.json and products/*.json
   agents/
-    review.py           # Review Agent + ReviewResult model
-    synthesis.py         # Synthesis Agent + SynthesizedDoc/Section models
+    analysis.py         # Analysis Agent (intake sub-capability) + AnalysisResult model
+    documentation.py     # Documentation Agent (synthesis sub-capability) + DocumentationDraft/Section models
   models.py            # Pydantic schemas for request/response validation (API layer)
 data/
   index.json
@@ -124,7 +124,7 @@ data/
 - **Product List** (`/`) — table of products (title, status, last updated) with a "New Product" button.
 - **New Product Dialog** — shadcn `Dialog`, just a title field. Submitting calls `POST /products` (title only) and navigates straight to the new product's empty chat thread.
 - **Product Page** (`/products/{id}`) — a chat thread (shadcn `Card` + scrollable message list rendering `conversation`) always visible, plus:
-  - While `status` is `input`/`questions_pending`: a `Textarea` + `Button` at the bottom of the thread to send the next message — first the initial description, then (if the Review Agent asked something) the one capped reply. Every send posts to the same `POST /products/{id}/messages`.
+  - While `status` is `input`/`questions_pending`: a `Textarea` + `Button` at the bottom of the thread to send the next message — first the initial description, then (if the Analysis Agent asked something) the one capped reply. Every send posts to the same `POST /products/{id}/messages`.
   - Once `status` is `synthesized`: the chat thread stays visible above, and the finished `sections` render below it as editable `Card`/`Textarea` blocks, with a "Save" button calling `PUT /products/{id}`.
 
 ### Component Structure
@@ -152,8 +152,8 @@ Note: creating a product now takes just a `title` up front (via `NewProductDialo
 | Step | Task |
 |---|---|
 | 1 | Scaffold backend: FastAPI app, `storage.py`, `data/` with empty `index.json` |
-| 2 | Build the Review Agent and Synthesis Agent (PydanticAI) |
-| 3 | Implement `POST /products` (create, empty conversation) and `POST /products/{id}/messages` (first message → Review, and Synthesis if no questions; capped reply → Synthesis) |
+| 2 | Build the Analysis Agent and Documentation Agent (PydanticAI) — the MVP-relevant sub-capabilities of two of the 8 broad agents |
+| 3 | Implement `POST /products` (create, empty conversation) and `POST /products/{id}/messages` (first message → Analysis, and Documentation if no questions; capped reply → Documentation) |
 | 4 | Implement `GET /products`, `GET /products/{id}`, `PUT /products/{id}` |
 | 5 | Scaffold frontend: Vite + React + Tailwind + shadcn, `api.ts` client |
 | 6 | Build Login screen (local-storage-only) and Product List |
@@ -163,68 +163,138 @@ Note: creating a product now takes just a `title` up front (via `NewProductDialo
 
 ## 7. Open Questions
 
-- Cap on the number of clarifying questions the Review Agent can ask (plan assumes ~3, asked together in one chat message) — worth confirming.
-- What happens if the PM's reply doesn't clearly address every question asked — does Synthesis just work with whatever's in the conversation, or is there a re-prompt (MVP assumption: it just proceeds; true multi-turn follow-up is deferred, see §8)?
+- Cap on the number of clarifying questions the Analysis Agent can ask (plan assumes ~3, asked together in one chat message) — worth confirming.
+- What happens if the PM's reply doesn't clearly address every question asked — does the Documentation Agent just work with whatever's in the conversation, or is there a re-prompt (MVP assumption: it just proceeds; true multi-turn follow-up is deferred, see §8)?
 - Whether "Login" needs to gate anything at all for a single local user, or is purely cosmetic for now.
 - Whether the chat input should stay visible/disabled once `status` is `synthesized` (in case the PM wants to add more context later) or disappear entirely in favor of the Section Editor's manual edits.
 
 ---
 
-## 8. Beyond the MVP: Full Agent Catalog & Phase Roadmap
+## 8. Beyond the MVP: The Broad Agent Framework
 
-Everything from earlier planning, plus the natural remaining agents from the original "AI PM" vision, laid out as a complete catalog with a phase assigned to each. The MVP (Phase 1) is the only phase actually being built now; everything else is roadmap, sequenced so each phase's agents depend only on documents/data that already exist by the end of the previous phase.
+Rather than a growing list of implementation-level agents, everything beyond the MVP is organized around **8 broad, function-based agents** — named for the PM job each one stands in for, not the technical step it happens to perform — plus a **9th, the Domain Knowledge Agent, called out separately as later adoption** rather than part of the initial 8. Each broad agent can carry more than one sub-capability, and those sub-capabilities land in different phases as the roadmap builds out; the MVP (Phase 1) only needs the first sub-capability of two of these eight.
 
-### 8.0 Full Agent Catalog
+### 8.0 The 8 Broad Agents at a Glance
 
-Every agent's role documented consistently — what it takes in, what it hands back, and what triggers it — so there's one place to check "what does this agent actually do" instead of piecing it together from prose.
+| # | Agent | Introduced | Purpose |
+|---|---|---|---|
+| 1 | **Analysis Agent** | Phase 1 (MVP) | Reads raw input — chat messages, later meeting notes — and figures out what's known, what's missing, and what to ask |
+| 2 | **Documentation Agent** | Phase 1 (MVP) | Drafts, refines, and validates the actual product/feature documents |
+| 3 | **Persona Agent** | Phase 2 | Owns who the users are as a standalone, reusable definition, rather than re-derived inside every document |
+| 4 | **Structuring Agent** | Phase 3 | Breaks a validated product into features, and features into sub-features |
+| 5 | **Architecture Decision Agent** | Phase 3 | Judges technical feasibility, dependencies, and design risk before a feature is buildable |
+| 6 | **Planning & Delivery Agent** | Phase 4 | Turns an approved feature into an implementation plan, generates the artifacts engineering needs, and publishes everything to Jira/Confluence |
+| 7 | **Prioritization Agent** | Phase 5 | Scores and ranks the backlog |
+| 8 | **Communication Agent** | Phase 5 | Rolls state up into a roadmap and drafts stakeholder-specific updates |
 
-| # | Agent | Phase | Purpose | Input | Output | Triggered by |
-|---|---|---|---|---|---|---|
-| 1 | **Review Agent** | 1 (MVP) | Decide whether the PM's product description is complete enough to draft, or needs clarification first | Chat `conversation` so far | `ReviewResult{questions: list[str]}` (empty = proceed straight to synthesis) | PM's first chat message on a product |
-| 2 | **Synthesis Agent** | 1 (MVP) | Turn the conversation into a structured product document | Full chat `conversation` | `SynthesizedDoc{sections: list[Section]}` | PM's reply to Review's questions (or immediately, if none were asked) |
-| 3 | **Refinement Agent** | 2 | Expand or rewrite specific sections on request, without re-running intake | A prompt (e.g., "expand Success Metrics") + current `sections` | Updated `sections`, merged back into the document | PM submits a refinement prompt on an already-synthesized document |
-| 4 | **Validation Agent** | 2 | Judge whether each section actually satisfies its schema's intent, not just that it's non-empty | Document `sections` + its type's `required_sections` schema | `ValidationResult{valid: bool, checks: list[SectionCheck]}` | PM clicks "Review" on a synthesized document |
-| 5 | **Decomposition Agent** | 3 | Split a validated product into candidate features, then each accepted feature into candidate sub-features | Validated product `sections` (+ conversation for context) | `FeatureProposals{items: list[FeatureProposal]}` — titles + rationale, nothing written to disk yet | PM clicks "Generate Features" on a valid product |
-| 6 | **Architecture Evaluator Agent** | 3 | Give a technical feasibility verdict before a feature is considered buildable | A validated feature/sub-feature's `sections` | Feasibility verdict + notes (risks, dependencies, open technical questions) | A feature/sub-feature passes Validation |
-| 7 | **Implementation Planning Agent** | 4 | Turn an architecture-approved feature into an actual documented implementation plan, not just a go/no-go verdict | An architecture-approved feature/sub-feature + the Architecture Evaluator's notes | A structured implementation plan: ordered steps, dependencies between steps, rough scope per step | A feature/sub-feature passes Architecture Evaluation |
-| 8 | **Artifact Agent** | 4 | Generate downstream engineering artifacts from a planned feature | An implementation-planned feature/sub-feature | `ArtifactDraft{sections: list[Section]}` (user stories, test plans, acceptance criteria) | PM requests an artifact type for a planned feature |
-| 9 | **Jira/Confluence Agent** | 4 | Publish finished work into the tools the team actually executes in | A feature's implementation plan + its artifacts | Jira epic (product) / stories (features, one per plan step) + Confluence pages; IDs written back to local JSON | PM clicks "Publish" on a planned, artifact-complete feature |
-| 10 | **Prioritization Agent** | 5 | Propose a ranked order across the backlog | All features/sub-features + whatever signal exists (architecture risk, plan scope, PM input) | Ranked list with rationale per item | On demand, or after a batch of features clears the pipeline |
-| 11 | **Roadmap Synthesis Agent** | 5 | Roll up current state into a single readable roadmap | Product/feature statuses + priority scores | A roadmap view (grouped/sequenced summary) | On demand, or scheduled refresh |
-| 12 | **Stakeholder Update Agent** | 5 | Draft a status update tailored to a specific audience | Current document/pipeline state + target audience | Drafted update text (eng standup / exec summary / customer changelog) | PM requests an update for a given audience |
-| 13 | **Meeting Notes Agent** | 5 | Turn raw meeting notes into concrete follow-through | Pasted transcript/notes + the relevant product/feature docs | Proposed action items + suggested section edits (not auto-applied) | PM pastes notes and picks the related doc(s) |
+**9th, for later adoption — not one of the initial 8:**
 
-### 8.1 Phase 2 — Refine & Structure
+| # | Agent | Introduced | Purpose |
+|---|---|---|---|
+| 9 | **Domain Knowledge Agent** | Phase 3 (optional) | Grounds other agents in org-specific knowledge an LLM can't know from training — past decisions, internal terminology, existing systems — instead of only general domain knowledge. Not part of the sequential pipeline; a retrieval service other agents call into. Deferred because it requires a real knowledge store (embeddings/vector search) that nothing else here needs — adopt once that infrastructure is worth building, not by default. |
 
-Builds directly on the MVP's synthesized documents; no new external dependencies.
+### 8.1 Analysis Agent
 
-- **Refinement Agent**: exposed via a `/documents/{id}/refine` endpoint (the old "Generate Panel" idea) — PM gives a prompt like "expand the Success Metrics section," agent returns updated `sections` merged back into the document. This is the natural answer to the MVP open question about editing after synthesis.
-- **Validation Agent**: required-fields JSON schema per document type (`schemas/*.json`), two-pass check (structural + LLM judgment on content quality), gating further progress until `valid: true`.
+Reads whatever raw input the PM gives it and decides what's missing before anything gets drafted.
 
-### 8.2 Phase 3 — Decompose & Evaluate
+| Sub-capability | Phase | Input | Output | Triggered by |
+|---|---|---|---|---|
+| Intake review *(MVP name: Review Agent)* | 1 (MVP) | Chat `conversation` so far | `AnalysisResult{questions: list[str]}` (empty = proceed straight to documentation) | PM's first chat message on a product |
+| Meeting-notes intake *(formerly Meeting Notes Agent)* | 5 | Pasted transcript/notes + the relevant product/feature docs | Proposed action items + suggested section edits (not auto-applied) | PM pastes notes and picks the related doc(s) |
 
-Turns a single validated product document into a real feature hierarchy, and adds a technical-feasibility gate before anything downstream gets built.
+### 8.2 Documentation Agent
 
-- **Decomposition Agent**: product → candidate features → (per accepted feature) candidate sub-features. PM confirms/deselects proposals at each level before real documents are created, same pattern as the earlier Breakdown Agent design, extended one level deeper.
-- **Architecture Evaluator Agent**: takes a validated feature/sub-feature and returns a feasibility verdict + notes (dependencies, risks, open technical questions). A feature that fails this gate goes back to the PM/engineering for rework rather than proceeding.
+Owns the actual written artifact — drafts it, rewrites pieces of it on request, and checks it's complete enough to act on.
 
-### 8.3 Phase 4 — Plan, Produce & Publish
+| Sub-capability | Phase | Input | Output | Triggered by |
+|---|---|---|---|---|
+| Synthesis *(MVP name: Synthesis Agent)* | 1 (MVP) | Full chat `conversation` | `DocumentationDraft{sections: list[Section]}` | PM's reply to Analysis's questions (or immediately, if none were asked) |
+| Refinement *(formerly Refinement Agent)* | 2 | A prompt (e.g., "expand Success Metrics") + current `sections` | Updated `sections`, merged back into the document | PM submits a refinement prompt on an already-drafted document |
+| Validation *(formerly Validation Agent)* | 2 | Document `sections` + its type's `required_sections` schema | `ValidationResult{valid: bool, checks: list[SectionCheck]}` | PM clicks "Review" on a drafted document |
 
-Turns an architecture-approved feature into an actual execution plan, generates the artifacts engineering needs, and pushes everything out to the tools the team already works in.
+Validation is a gate, not just a writing task, but it's grouped here because it's the Documentation Agent checking its own output against the schema it was drafting to — the same agent that writes it is the one that judges whether it's done.
 
-- **Implementation Planning Agent**: takes an architecture-approved feature/sub-feature (plus the Architecture Evaluator's notes) and produces a documented implementation plan — ordered steps, dependencies between them, rough scope per step. This is new: previously only a feasibility verdict existed, with nothing that actually laid out *how* to build the thing.
-- **Artifact Agent**: generates user stories, test plans, or acceptance criteria for any feature/sub-feature that has an implementation plan.
-- **Jira/Confluence Agent**: creates a Jira epic per product and a story per plan step (not just one story per feature — the implementation plan's steps are what get broken into tickets), a Confluence page per doc/artifact, and persists the resulting Jira key / Confluence page URL back onto the local JSON record. This is the system's first external dependency — real auth credentials, network calls, and error handling the earlier phases deliberately avoid.
+### 8.3 Persona Agent — *new*
 
-### 8.4 Phase 5 — Ongoing PM Operations
+Owns "who the users are" as its own artifact, referenced by the Documentation Agent rather than re-described from scratch inside every product/feature doc.
 
-Once documents exist and are flowing through the pipeline, these agents support the PM's day-to-day work rather than moving a single document forward — this is where the very first version of this plan's "autonomous AI PM" vision (intake triage, backlog grooming, stakeholder updates) actually lands, now with real structured documents to operate on.
+| Sub-capability | Phase | Input | Output | Triggered by |
+|---|---|---|---|---|
+| Persona definition & reuse | 2 | Conversation/document context mentioning users, or a direct PM prompt | A structured persona (needs, context, pain points) linked to the product/feature that referenced it | PM defines a persona, or the Documentation Agent flags an undefined "Target Users" reference |
 
-- **Prioritization Agent**: scores/ranks features and sub-features so the PM has a proposed order, not just a flat backlog.
-- **Roadmap Synthesis Agent**: rolls up statuses + priority into a single roadmap view, refreshed as documents move through the pipeline.
-- **Stakeholder Update Agent**: drafts status updates tailored to different audiences from current document/pipeline state.
-- **Meeting Notes Agent**: turns raw meeting notes into action items and proposed edits to existing docs, rather than starting a new document from scratch.
+### 8.4 Structuring Agent
 
-### 8.5 Handoff Mechanics (Phases 2-4)
+Turns one document into a hierarchy.
 
-From Phase 2 onward, the "one route calls one agent" MVP pattern gives way to agents handing structured output directly to the next agent — via PydanticAI's agent delegation (an agent invoking the next as a tool call) or a thin orchestrator function calling them in sequence. A rejection at any gate (Validation, Architecture Evaluator) stops the chain there instead of continuing on to planning, artifact generation, or publishing, which means documents need an explicit **per-stage status** (e.g., `decomposed` → `validated` → `architecture-approved` → `implementation-planned` → `artifacts-generated` → `published`) rather than the MVP's single `status` field, so a PM can see exactly where each feature sits and where it stalled.
+| Sub-capability | Phase | Input | Output | Triggered by |
+|---|---|---|---|---|
+| Decomposition *(formerly Decomposition Agent)* | 3 | Validated product `sections` (+ conversation for context) | `FeatureProposals{items: list[FeatureProposal]}` — titles + rationale, nothing written to disk yet | PM clicks "Generate Features" on a valid product |
+
+Product → candidate features → (per accepted feature) candidate sub-features, two levels deep. PM confirms/deselects proposals at each level before real documents are created.
+
+### 8.5 Architecture Decision Agent
+
+The technical-feasibility gate between "documented" and "buildable."
+
+| Sub-capability | Phase | Input | Output | Triggered by |
+|---|---|---|---|---|
+| Feasibility evaluation *(formerly Architecture Evaluator Agent)* | 3 | A validated feature/sub-feature's `sections` | Feasibility verdict + notes (risks, dependencies, open technical questions) | A feature/sub-feature passes Validation |
+
+A feature that fails this gate goes back to the PM/engineering for rework rather than proceeding. **Optionally grounded by the Domain Knowledge Agent (§8.9)** once that's adopted — this is one of the two consumers of it, since a feasibility call is exactly where "generic best practice" and "what this org's systems can actually support" are most likely to diverge.
+
+### 8.6 Planning & Delivery Agent
+
+Everything from "approved" to "in the tools engineering actually executes in."
+
+| Sub-capability | Phase | Input | Output | Triggered by |
+|---|---|---|---|---|
+| Implementation planning *(formerly Implementation Planning Agent)* | 4 | An architecture-approved feature/sub-feature + the Architecture Decision Agent's notes | A structured implementation plan: ordered steps, dependencies between steps, rough scope per step | A feature/sub-feature passes Architecture Decision |
+| Artifact generation *(formerly Artifact Agent)* | 4 | An implementation-planned feature/sub-feature | `ArtifactDraft{sections: list[Section]}` (user stories, test plans, acceptance criteria) | PM requests an artifact type for a planned feature |
+| Publishing *(formerly Jira/Confluence Agent)* | 4 | A feature's implementation plan + its artifacts | Jira epic (product) / stories (one per plan step) + Confluence pages; IDs written back to local JSON | PM clicks "Publish" on a planned, artifact-complete feature |
+
+This is the system's first external dependency — real auth credentials, network calls, and error handling that every earlier agent deliberately avoids.
+
+### 8.7 Prioritization Agent
+
+| Sub-capability | Phase | Input | Output | Triggered by |
+|---|---|---|---|---|
+| Backlog scoring *(unchanged from Prioritization Agent)* | 5 | All features/sub-features + whatever signal exists (architecture risk, plan scope, PM input) | Ranked list with rationale per item | On demand, or after a batch of features clears the pipeline |
+
+Already a function-named agent in the original catalog — kept as-is.
+
+### 8.8 Communication Agent
+
+Everything about telling people what's going on, as opposed to moving the work itself forward.
+
+| Sub-capability | Phase | Input | Output | Triggered by |
+|---|---|---|---|---|
+| Roadmap synthesis *(formerly Roadmap Synthesis Agent)* | 5 | Product/feature statuses + priority scores | A roadmap view (grouped/sequenced summary) | On demand, or scheduled refresh |
+| Stakeholder updates *(formerly Stakeholder Update Agent)* | 5 | Current document/pipeline state + target audience | Drafted update text (eng standup / exec summary / customer changelog) | PM requests an update for a given audience |
+
+This — together with Analysis's meeting-notes sub-capability and Prioritization — is where the very first version of this plan's "autonomous AI PM" vision (intake triage, backlog grooming, stakeholder updates) actually lands, now with real structured documents to operate on.
+
+### 8.9 Domain Knowledge Agent — *for later adoption, not one of the 8*
+
+Deliberately kept outside the core 8: it's a cross-cutting retrieval service, not a PM function with its own outputs.
+
+| Sub-capability | Phase | Input | Output | Triggered by |
+|---|---|---|---|---|
+| Domain grounding | 3 (optional) | A query from another agent (e.g., "has checkout latency been addressed before?") + the internal knowledge base | Relevant excerpts/citations from past docs, decisions, or architecture notes | Called mid-task by the Structuring or Architecture Decision Agent (not a standalone pipeline step) |
+
+Consulted by the Structuring Agent (to avoid proposing a feature that was already tried and rejected) and the Architecture Decision Agent (to check a proposal against the org's *actual* existing systems, not just generic best practice). Requires a real knowledge store — embeddings/vector search over internal docs, architecture notes, past decisions — a genuine step up in infrastructure from every other agent here, which only ever reads the current document plus the LLM's own knowledge. That store also needs a source and a way to stay current, or it becomes a source of false confidence rather than grounding. Adopt when that infrastructure is worth building, not by default.
+
+### 8.10 Phase Roadmap at a Glance
+
+| Phase | Agents active (sub-capability) |
+|---|---|
+| 1 (MVP) | Analysis (intake), Documentation (synthesis) |
+| 2 | Documentation (refinement, validation), Persona |
+| 3 | Structuring, Architecture Decision, *[optional: Domain Knowledge]* |
+| 4 | Planning & Delivery (planning, artifacts, publishing) |
+| 5 | Analysis (meeting notes), Prioritization, Communication (roadmap, stakeholder updates) |
+
+### 8.11 Handoff Mechanics (Phases 2-4)
+
+From Phase 2 onward, the "one route calls one agent" MVP pattern gives way to agents handing structured output directly to the next agent — via PydanticAI's agent delegation (an agent invoking the next as a tool call) or a thin orchestrator function calling them in sequence. A rejection at any gate (Documentation's validation sub-capability, Architecture Decision) stops the chain there instead of continuing on to planning, artifact generation, or publishing, which means documents need an explicit **per-stage status** (e.g., `decomposed` → `validated` → `architecture-approved` → `implementation-planned` → `artifacts-generated` → `published`) rather than the MVP's single `status` field, so a PM can see exactly where each feature sits and where it stalled.
+
+The **Domain Knowledge Agent**, if and when adopted, is the one exception to this handoff chain: it doesn't sit at a stage or produce a status transition of its own. The Structuring and Architecture Decision Agents would call it as a tool mid-execution, the way any agent might call a function, and its answer just informs the output those two agents were already going to produce.
