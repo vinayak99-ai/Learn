@@ -195,7 +195,7 @@ Rather than a growing list of implementation-level agents, everything beyond the
 
 ### 8.1 Analysis Agent
 
-Reads whatever raw input the PM gives it and decides what's missing before anything gets drafted.
+**Function:** Reads whatever raw input the PM gives it and decides what's missing before anything gets drafted. This is the system's "listener" — it doesn't write documentation itself, it decides whether there's enough to write from.
 
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
@@ -204,7 +204,7 @@ Reads whatever raw input the PM gives it and decides what's missing before anyth
 
 ### 8.2 Documentation Agent
 
-Owns the actual written artifact — drafts it, rewrites pieces of it on request, and checks it's complete enough to act on.
+**Function:** Owns the actual written artifact — drafts it, rewrites pieces of it on request, and checks it's complete enough to act on. This is the system's primary "writer."
 
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
@@ -216,7 +216,7 @@ Validation is a gate, not just a writing task, but it's grouped here because it'
 
 ### 8.3 Persona Agent — *new*
 
-Owns "who the users are" as its own artifact, referenced by the Documentation Agent rather than re-described from scratch inside every product/feature doc.
+**Function:** Owns "who the users are" as its own artifact, referenced by the Documentation Agent rather than re-described from scratch inside every product/feature doc.
 
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
@@ -224,7 +224,7 @@ Owns "who the users are" as its own artifact, referenced by the Documentation Ag
 
 ### 8.4 Structuring Agent
 
-Turns one document into a hierarchy.
+**Function:** Takes one finished product document and breaks it down into a real hierarchy — candidate features, then candidate sub-features underneath each one — for the PM to review and confirm.
 
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
@@ -234,7 +234,7 @@ Product → candidate features → (per accepted feature) candidate sub-features
 
 ### 8.5 Architecture Decision Agent
 
-The technical-feasibility gate between "documented" and "buildable."
+**Function:** Acts as the technical-feasibility gate between "documented" and "buildable" — gives a feasibility read (risks, dependencies, open technical questions) before a feature moves toward being built.
 
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
@@ -244,7 +244,7 @@ A feature that fails this gate goes back to the PM/engineering for rework rather
 
 ### 8.6 Planning & Delivery Agent
 
-Everything from "approved" to "in the tools engineering actually executes in."
+**Function:** Everything from "approved" to "in the tools engineering actually executes in" — turns an approved feature into a real implementation plan, generates what engineering needs, and publishes the finished work.
 
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
@@ -256,6 +256,8 @@ This is the system's first external dependency — real auth credentials, networ
 
 ### 8.7 Prioritization Agent
 
+**Function:** Looks across the backlog and proposes an order — what to build first — using whatever signal is available.
+
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
 | Backlog scoring *(unchanged from Prioritization Agent)* | 5 | All features/sub-features + whatever signal exists (architecture risk, plan scope, PM input) | Ranked list with rationale per item | On demand, or after a batch of features clears the pipeline |
@@ -264,7 +266,7 @@ Already a function-named agent in the original catalog — kept as-is.
 
 ### 8.8 Communication Agent
 
-Everything about telling people what's going on, as opposed to moving the work itself forward.
+**Function:** Everything about telling people what's going on, as opposed to moving the work itself forward — rolls status up into a roadmap view, and drafts updates tailored to whoever's asking.
 
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
@@ -275,7 +277,7 @@ This — together with Analysis's meeting-notes sub-capability and Prioritizatio
 
 ### 8.9 Domain Knowledge Agent — *for later adoption, not one of the 8*
 
-Deliberately kept outside the core 8: it's a cross-cutting retrieval service, not a PM function with its own outputs.
+**Function:** Grounds other agents in knowledge specific to the organization — past decisions, internal systems, internal terminology — that an LLM has no way of knowing on its own. Deliberately kept outside the core 8: it's a cross-cutting retrieval service, not a PM function with its own outputs.
 
 | Sub-capability | Phase | Input | Output | Triggered by |
 |---|---|---|---|---|
