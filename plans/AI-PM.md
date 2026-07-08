@@ -3,7 +3,7 @@
 
 ### Executive Summary
 
-A deliberately small first build, staged as three milestones instead of one big release: **MVP 1** (this build) is a product manager logging in, creating a product, and describing it through a chat-style interface. An **Analysis Agent** reads the conversation and asks a short, capped round of clarifying questions in the chat (or none, if the input is already solid). The PM replies in the same thread, and a **Documentation Agent** turns the whole conversation into a finished product document. It's conversational in presentation, but still just one capped round under the hood — no open-ended multi-turn refinement, no feature breakdown, no validation schemas, no downstream artifacts. Those bigger ideas are staged into **MVP 2** and **MVP 3**, detailed in §8 as a broader framework of 8 function-based agents (plus a 9th held for later adoption beyond all three). Stack stays React (shadcn + Tailwind) + Python (FastAPI) + JSON files on disk, with each agent built as a PydanticAI `Agent`.
+A deliberately small first build, staged as three milestones instead of one big release: **MVP 1** (this build) is a product manager logging in, creating a product, and describing it through a chat-style interface. An **Analysis Agent** works from a standard product checklist to figure out what's missing, and asks up to 3 clarifying questions per round — often with clickable suggested options, not just free text — looping for further rounds until the checklist is covered or a 30-question cap is reached, whichever comes first. The PM replies each round in the same thread, and once the loop ends, a **Documentation Agent** turns the whole conversation into a finished product document. It's a real back-and-forth, not a single capped exchange — but there's still no feature breakdown, no schema-enforced validation gate, no downstream artifacts; those bigger ideas are staged into **MVP 2** and **MVP 3**, detailed in §8 as a broader framework of 8 function-based agents (plus a 9th held for later adoption beyond all three). Stack stays React (shadcn + Tailwind) + Python (FastAPI) + JSON files on disk, with each agent built as a PydanticAI `Agent`.
 
 ### The Three-MVP Roadmap, at a Glance
 
@@ -21,10 +21,11 @@ A deliberately small first build, staged as three milestones instead of one big 
 1. **Log in.** A simple screen asking for a name — no password, nothing persisted server-side. Just enough to feel like "logging in"; gates nothing.
 2. **Create a product.** PM clicks "New Product," gives it a title, and lands in a chat thread for that product.
 3. **Describe it in the chat.** PM types their first message describing the product — problem, users, goals, whatever they have — same as talking to a person.
-4. **Analysis Agent replies in the thread.** It reads the message and decides: is this enough to write a solid product brief, or not? If not, it posts one assistant message in the chat containing a short, capped list of clarifying questions (e.g., up to 3, asked together in one message — not one at a time).
-5. **PM replies, once.** The PM types one reply covering the question(s) in the same thread — still a chat, but capped to this single round; there's no follow-up round of questions after that reply.
-6. **Documentation Agent runs automatically after the reply** (or immediately after Analysis, if it asked nothing). It takes the full conversation and produces the finished product document as a set of sections, and posts a short confirmation message in the thread.
-7. **PM sees the result.** The synthesized document is shown alongside the chat thread and can be edited by hand. Done — that's the full MVP 1 loop.
+4. **Analysis Agent replies in the thread, checking against the standard product checklist** (§4, "Standard Product Checklist"). It figures out which checklist items are still unclear and posts up to 3 questions for this round — several of them with clickable suggested options (e.g., likely user segments) alongside the option to just type a free-text answer.
+5. **PM replies to that round.** Either by clicking suggested options, typing free text, or a mix — one reply per round.
+6. **The loop continues.** If checklist items are still open and the question cap hasn't been hit, Analysis Agent asks up to 3 more in the next round. This repeats until either the checklist is sufficiently covered, or a hard cap of 30 total questions is reached — whichever happens first.
+7. **Documentation Agent runs automatically once the loop ends** (checklist covered, or nothing was needed in the first place). It takes the full conversation and produces the finished product document as a set of sections, and posts a short confirmation message in the thread.
+8. **PM sees the result.** The synthesized document is shown alongside the chat thread and can be edited by hand. Done — that's the full MVP 1 loop.
 
 ---
 
@@ -68,24 +69,40 @@ data/
 {
   "id": "prod_001",
   "title": "Checkout Redesign",
-  "status": "synthesized",
+  "status": "questions_pending",
   "conversation": [
     { "role": "user", "content": "We want to speed up our checkout flow, it's too slow and we're losing customers at payment.", "timestamp": "2026-07-05T10:00:00Z" },
-    { "role": "assistant", "content": "Two quick questions: what's the current average checkout completion time, and which user segment is most affected?", "timestamp": "2026-07-05T10:01:00Z" },
-    { "role": "user", "content": "About 45 seconds average, mostly mobile users.", "timestamp": "2026-07-05T10:02:00Z" },
-    { "role": "assistant", "content": "Got it — drafted the product brief below.", "timestamp": "2026-07-05T10:02:30Z" }
+    { "role": "assistant", "content": "1. What's the current average checkout completion time?\n2. Which user segment is most affected?\n3. Is there a target timeline for this?", "timestamp": "2026-07-05T10:01:00Z" },
+    { "role": "user", "content": "About 45 seconds average. Mostly mobile users. No hard deadline yet.", "timestamp": "2026-07-05T10:02:00Z" }
   ],
-  "sections": [
-    { "heading": "Overview", "content": "..." },
-    { "heading": "Target Users", "content": "..." },
-    { "heading": "Success Metrics", "content": "..." }
+  "checklist_covered": ["problem", "current_pain_points"],
+  "questions_asked": 3,
+  "pending_questions": [
+    {
+      "checklist_item": "target_users",
+      "text": "Which user segment is most affected?",
+      "options": ["Mobile users", "Desktop users", "Enterprise customers"]
+    },
+    {
+      "checklist_item": "success_metrics",
+      "text": "How will we know this worked?",
+      "options": ["Faster average completion time", "Higher conversion rate", "Fewer support tickets"]
+    },
+    {
+      "checklist_item": "constraints",
+      "text": "Is there a target timeline for this?",
+      "options": []
+    }
   ],
+  "sections": [],
   "created_at": "2026-07-05T10:00:00Z",
-  "updated_at": "2026-07-05T10:02:30Z"
+  "updated_at": "2026-07-05T10:02:00Z"
 }
 ```
 
-`conversation` is the entire chat thread rendered in the UI — it starts with the PM's first message, gets one assistant message for the (possibly empty) clarifying-questions round, one more PM message replying, and a final short assistant confirmation once `sections` are synthesized. If the Analysis Agent asks nothing, the thread is just two messages: the PM's description and the assistant's confirmation.
+`conversation` is the entire chat thread rendered in the UI — the PM's first message, one assistant message per question round (rendered as plain numbered text for the transcript/history), and the PM's reply to each round, repeating until the loop ends, followed by a final short assistant confirmation once `sections` are synthesized. If the Analysis Agent asks nothing at all, the thread is just two messages: the PM's description and the assistant's confirmation.
+
+`checklist_covered` and `questions_asked` are backend-maintained bookkeeping (§4) that drive when the loop ends — not something the LLM is trusted to count on its own across calls. `pending_questions` holds the *current* round's questions in structured form (with optional `options` for clickable suggestions) so the frontend can render interactive chips; it's cleared once the PM replies to that round, and is empty once the product reaches `synthesized`.
 
 ---
 
@@ -95,16 +112,39 @@ data/
 
 | Agent | Module | `output_type` | Runs when |
 |---|---|---|---|
-| **Analysis Agent** (intake sub-capability) | `agents/analysis.py` | `AnalysisResult{questions: list[str]}` (empty = no follow-up needed) | Right after the PM's first chat message, on the conversation so far |
-| **Documentation Agent** (synthesis sub-capability) | `agents/documentation.py` | `DocumentationDraft{sections: list[Section]}` where `Section{heading: str, content: str}` | Right after the PM's reply to the questions (or immediately after Analysis, if it asked nothing) |
+| **Analysis Agent** (intake sub-capability) | `agents/analysis.py` | `AnalysisResult{questions: list[Question], done: bool}` where `Question{checklist_item: str, text: str, options: list[str]}` | On the PM's first chat message, and again after each subsequent reply — until `done` or the 30-question cap is hit |
+| **Documentation Agent** (synthesis sub-capability) | `agents/documentation.py` | `DocumentationDraft{sections: list[Section]}` where `Section{heading: str, content: str}` | Once the Analysis loop ends — `done: true`, or the cap is reached |
 
-These are the MVP 1-relevant slices of two of the framework's 8 broad agents (§8) — Analysis and Documentation each gain more sub-capabilities in MVP 2 and MVP 3, but MVP 1 only needs intake and synthesis. No shared orchestrator, no dependency-injected context beyond what's passed directly into the call — with only two agents and one linear path, the FastAPI routes just call them in sequence. Both agents read the full `conversation` array rather than a single flat field, but MVP 1 still caps the exchange to one clarifying round — the routes never call Analysis a second time on the same product.
+These are the MVP 1-relevant slices of two of the framework's 8 broad agents (§8) — Analysis and Documentation each gain more sub-capabilities in MVP 2 and MVP 3, but MVP 1 only needs intake and synthesis. No shared orchestrator, no dependency-injected context beyond what's passed directly into the call — the FastAPI routes just call an agent and persist the result. Both agents read the full `conversation` array rather than a single flat field. Analysis is **not** capped to one call per product: it may run multiple times, once per round, each time checking `checklist_covered` and `questions_asked` (§3) to decide whether to keep going.
+
+### Standard Product Checklist
+
+The Analysis Agent doesn't decide from scratch what's worth asking about — it works from a fixed, ordered checklist that defines what a complete product intake covers. Stored as plain JSON, editable without touching code:
+
+```json
+// checklists/product_checklist.json
+[
+  { "item": "problem",              "label": "Problem / Opportunity",        "required": true  },
+  { "item": "target_users",         "label": "Target Users",                 "required": true  },
+  { "item": "current_pain_points",  "label": "Current Pain Points",          "required": true  },
+  { "item": "success_metrics",      "label": "Success Metrics",              "required": true  },
+  { "item": "constraints",          "label": "Constraints / Timeline",       "required": false },
+  { "item": "stakeholders",         "label": "Stakeholders",                 "required": false },
+  { "item": "existing_alternatives","label": "Existing/Competitive Options", "required": false }
+]
+```
+
+Each round, the Analysis Agent is given this checklist plus `checklist_covered` (items already answered) and asks up to 3 questions targeting the highest-priority uncovered items — `required` items first. It marks an item covered in its response once the conversation clearly addresses it; the backend merges that into `checklist_covered` on the product. The loop ends (`done: true`) once every `required` item is covered, even if some `required: false` items are still open — those are nice-to-have, not blocking.
+
+This checklist isn't arbitrary: it's designed to line up with the product document's own `sections` (§8.2's Documentation Agent, and the formal schema `required_sections` that arrives with MVP 2's validation sub-capability) — what Analysis gathers is what Documentation drafts into sections, and later what Validation checks for completeness. Same vocabulary throughout, not three different lists that can drift out of sync.
+
+**The 30-question cap is enforced by the backend, not the LLM.** Before calling the Analysis Agent, the route checks `questions_asked >= 30`; if so, it skips straight to Documentation regardless of what's still uncovered. This is deliberate — an LLM re-reading a growing transcript each round is a reasonable way to decide *what* to ask next, but counting *how many* questions it has asked across calls it doesn't retain memory of (§4, "Conversation State vs. Agent Message History") is not something to trust it to self-police.
 
 ### Conversation State vs. Agent Message History
 
 PydanticAI tracks conversation as a list of typed `ModelMessage` objects (accumulated via `result.new_messages()` / `result.all_messages()`, and passed back in on the next call as `message_history=`) — not the simple role/content records our app stores. For a stateless FastAPI process, that `message_history` has to be serialized between requests too, via `ModelMessagesTypeAdapter.dump_python(...)` / `.validate_python(...)`.
 
-MVP 1 deliberately doesn't use this: Analysis runs at most once per product (on the first message) and Documentation runs at most once (on the reply), so there's no multi-turn *within* either agent's own history to continue — each agent gets a single `.run()` call built from the app's `conversation` array as plain text context, not a chain of prior `.run()` calls. `message_history` only earns its place once a single agent needs to remember its own prior structured turns across multiple calls (e.g., a future uncapped, multi-round Analysis Agent — see §8, "Beyond MVP 1").
+MVP 1 deliberately doesn't use this, even though Analysis now runs across multiple rounds (up to 10, at 3 questions each, per the 30-question cap): every round is still a fresh `.run()` call built from the app's `conversation` array as plain text context, plus `checklist_covered` so it knows what not to re-ask — not a chain of `message_history`-linked calls. The backend, not the agent's own memory, tracks how many rounds have happened and what's covered (§4, "Standard Product Checklist"), so there's nothing that actually requires the agent to remember its own prior turns via `message_history` — re-deriving from the transcript each time is simpler and just as correct. `message_history` would only earn its place if a future capability needed the agent to reference its own exact prior reasoning, not just the plain facts already sitting in `conversation`.
 
 This also sets a boundary worth keeping deliberately, not just for MVP 1: the app's `conversation` array is the shared, PM-facing log that can cross agent boundaries (both Analysis and Documentation read it), while each agent's own internal `message_history` — if and when one is used — should stay scoped to that one agent. Analysis and Documentation have different system prompts and output types; feeding one agent's raw message history into another would hand it a "conversation" framed by an agent it isn't, rather than the plain facts the PM actually said.
 
@@ -113,9 +153,9 @@ This also sets a boundary worth keeping deliberately, not just for MVP 1: the ap
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/products` | List all products |
-| `GET` | `/products/{id}` | Get full product content, including `conversation` |
-| `POST` | `/products` | Create a product (`title` only); starts with `status: "input"` and an empty `conversation` |
-| `POST` | `/products/{id}/messages` | Submit the PM's next chat message (`message`); appends it to `conversation`, then: if this is the **first** user message, runs the Analysis Agent (questions → append as one assistant message, `status: "questions_pending"`; no questions → run Documentation immediately); if `status` was already `questions_pending`, this is the capped reply — always runs the Documentation Agent, appends a confirmation message, and sets `status: "synthesized"` |
+| `GET` | `/products/{id}` | Get full product content, including `conversation` and `pending_questions` |
+| `POST` | `/products` | Create a product (`title` only); starts with `status: "input"`, empty `conversation`, `checklist_covered: []`, `questions_asked: 0` |
+| `POST` | `/products/{id}/messages` | Submit the PM's message (`message`) — the first description, or a reply to the current round; appends it to `conversation`. If `questions_asked >= 30`, skips straight to Documentation without calling Analysis again. Otherwise runs the Analysis Agent with `conversation` + the checklist + `checklist_covered`: if it returns `done: true` (empty/no more questions needed), runs the Documentation Agent, appends a confirmation, sets `status: "synthesized"`, and clears `pending_questions`; if `done: false`, merges any newly-covered items into `checklist_covered`, adds the new questions' count to `questions_asked`, stores the round in `pending_questions`, appends it to `conversation` as plain numbered text, and keeps `status: "questions_pending"` |
 | `PUT` | `/products/{id}` | Manual edits to `title`/`sections` after synthesis |
 
 ### File Layout
@@ -124,9 +164,11 @@ backend/
   main.py            # FastAPI app, route definitions
   storage.py          # read/write helpers for index.json and products/*.json
   agents/
-    analysis.py         # Analysis Agent (intake sub-capability) + AnalysisResult model
+    analysis.py         # Analysis Agent (intake sub-capability) + AnalysisResult/Question models
     documentation.py     # Documentation Agent (synthesis sub-capability) + DocumentationDraft/Section models
   models.py            # Pydantic schemas for request/response validation (API layer)
+checklists/
+  product_checklist.json   # standard checklist the Analysis Agent works from
 data/
   index.json
   products/
@@ -141,7 +183,8 @@ data/
 - **Product List** (`/`) — table of products (title, status, last updated) with a "New Product" button.
 - **New Product Dialog** — shadcn `Dialog`, just a title field. Submitting calls `POST /products` (title only) and navigates straight to the new product's empty chat thread.
 - **Product Page** (`/products/{id}`) — a chat thread (shadcn `Card` + scrollable message list rendering `conversation`) always visible, plus:
-  - While `status` is `input`/`questions_pending`: a `Textarea` + `Button` at the bottom of the thread to send the next message — first the initial description, then (if the Analysis Agent asked something) the one capped reply. Every send posts to the same `POST /products/{id}/messages`.
+  - While `status` is `input`: a plain `Textarea` + `Button` for the PM's first message (no `pending_questions` yet).
+  - While `status` is `questions_pending`: `pending_questions` renders as one question card per item (up to 3), each showing its `text` and, if `options` is non-empty, a row of clickable shadcn `Badge`/`Button` chips — clicking one fills that question's answer, free text always still available. A single "Send" composes the answers into one reply and posts to `POST /products/{id}/messages`; the response either brings the next round's `pending_questions` or (once `done`) flips to `synthesized`.
   - Once `status` is `synthesized`: the chat thread stays visible above, and the finished `sections` render below it as editable `Card`/`Textarea` blocks, with a "Save" button calling `PUT /products/{id}`.
 
 ### Component Structure
@@ -154,7 +197,8 @@ frontend/
       ProductPage.tsx        # chat thread + (once synthesized) the section editor below it
     components/
       NewProductDialog.tsx
-      ChatThread.tsx          # renders `conversation`, plus the message input while not yet synthesized
+      ChatThread.tsx          # renders `conversation`, plus QuestionRound while not yet synthesized
+      QuestionRound.tsx        # renders `pending_questions` as cards with optional clickable option chips
       SectionEditor.tsx
     lib/
       api.ts               # thin fetch wrapper for backend endpoints
@@ -169,19 +213,22 @@ Note: creating a product now takes just a `title` up front (via `NewProductDialo
 | Step | Task |
 |---|---|
 | 1 | Scaffold backend: FastAPI app, `storage.py`, `data/` with empty `index.json` |
-| 2 | Build the Analysis Agent and Documentation Agent (PydanticAI) — the MVP 1-relevant sub-capabilities of two of the 8 broad agents |
-| 3 | Implement `POST /products` (create, empty conversation) and `POST /products/{id}/messages` (first message → Analysis, and Documentation if no questions; capped reply → Documentation) |
-| 4 | Implement `GET /products`, `GET /products/{id}`, `PUT /products/{id}` |
-| 5 | Scaffold frontend: Vite + React + Tailwind + shadcn, `api.ts` client |
-| 6 | Build Login screen (local-storage-only) and Product List |
-| 7 | Build New Product Dialog, the ChatThread component, and the synthesized Section Editor view |
+| 2 | Author `checklists/product_checklist.json` |
+| 3 | Build the Analysis Agent (PydanticAI) — checklist-aware, `Question`/`AnalysisResult` models, up to 3 questions with optional options per call |
+| 4 | Build the Documentation Agent (PydanticAI) — the MVP 1-relevant synthesis sub-capability |
+| 5 | Implement `POST /products` (create, empty conversation/checklist state) and `POST /products/{id}/messages` (the round-by-round loop: Analysis until `done` or the 30-question cap, then Documentation) |
+| 6 | Implement `GET /products`, `GET /products/{id}`, `PUT /products/{id}` |
+| 7 | Scaffold frontend: Vite + React + Tailwind + shadcn, `api.ts` client |
+| 8 | Build Login screen (local-storage-only) and Product List |
+| 9 | Build New Product Dialog, the ChatThread + QuestionRound components (with clickable option chips), and the synthesized Section Editor view |
 
 ---
 
 ## 7. Open Questions
 
-- Cap on the number of clarifying questions the Analysis Agent can ask (plan assumes ~3, asked together in one chat message) — worth confirming.
-- What happens if the PM's reply doesn't clearly address every question asked — does the Documentation Agent just work with whatever's in the conversation, or is there a re-prompt (MVP 1 assumption: it just proceeds; true multi-turn follow-up is deferred beyond MVP 3, see §8)?
+- Whether 30 is a hard stop regardless of how many `required` checklist items remain uncovered (plan assumes yes — Documentation just works with whatever's in the conversation past that point), or whether an unresolved `required` item at the cap should surface differently to the PM than a normal completion.
+- What happens if a PM's reply ignores the suggested options and free-types something that doesn't clearly answer the question — same assumption as above, Analysis just re-evaluates the whole conversation next round rather than re-prompting the same question.
+- Whether the checklist should ever vary by product (e.g., a lighter checklist for a small feature-sized product vs. a fuller one for a major initiative), or stay one fixed list for all of MVP 1.
 - Whether "Login" needs to gate anything at all for a single local user, or is purely cosmetic for now.
 - Whether the chat input should stay visible/disabled once `status` is `synthesized` (in case the PM wants to add more context later) or disappear entirely in favor of the Section Editor's manual edits.
 
@@ -216,11 +263,11 @@ Rather than a growing list of implementation-level agents, everything beyond MVP
 
 ### 8.1 Analysis Agent
 
-**Function:** Reads whatever raw input the PM gives it and decides what's missing before anything gets drafted. This is the system's "listener" — it doesn't write documentation itself, it decides whether there's enough to write from.
+**Function:** Reads whatever raw input the PM gives it, checks it against the standard product checklist (§4), and decides what's still missing before anything gets drafted — asking up to 3 questions per round, often with clickable suggested options, across as many rounds as needed up to a 30-question cap. This is the system's "listener" — it doesn't write documentation itself, it decides whether there's enough to write from.
 
 | Sub-capability | MVP | Input | Output | Triggered by |
 |---|---|---|---|---|
-| Intake review *(MVP 1 name: Review Agent)* | MVP 1 | Chat `conversation` so far | `AnalysisResult{questions: list[str]}` (empty = proceed straight to documentation) | PM's first chat message on a product |
+| Intake review *(MVP 1 name: Review Agent)* | MVP 1 | Chat `conversation` so far + the product checklist + `checklist_covered` | `AnalysisResult{questions: list[Question], done: bool}` (up to 3 `Question`s per call, each with optional `options`; `done: true` = proceed to documentation) | PM's first chat message, and again after each subsequent reply, until `done` or the 30-question cap |
 | Meeting-notes intake *(formerly Meeting Notes Agent)* | MVP 3 | Pasted transcript/notes + the relevant product/feature docs | Proposed action items + suggested section edits (not auto-applied) | PM pastes notes and picks the related doc(s) |
 
 ### 8.2 Documentation Agent
