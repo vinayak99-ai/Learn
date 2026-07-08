@@ -91,6 +91,14 @@ data/
 
 These are the MVP-relevant slices of two of the framework's 8 broad agents (§8) — Analysis and Documentation each gain more sub-capabilities in later phases, but the MVP only needs intake and synthesis. No shared orchestrator, no dependency-injected context beyond what's passed directly into the call — with only two agents and one linear path, the FastAPI routes just call them in sequence. Both agents read the full `conversation` array rather than a single flat field, but the MVP still caps the exchange to one clarifying round — the routes never call Analysis a second time on the same product.
 
+### Conversation State vs. Agent Message History
+
+PydanticAI tracks conversation as a list of typed `ModelMessage` objects (accumulated via `result.new_messages()` / `result.all_messages()`, and passed back in on the next call as `message_history=`) — not the simple role/content records our app stores. For a stateless FastAPI process, that `message_history` has to be serialized between requests too, via `ModelMessagesTypeAdapter.dump_python(...)` / `.validate_python(...)`.
+
+The MVP deliberately doesn't use this: Analysis runs at most once per product (on the first message) and Documentation runs at most once (on the reply), so there's no multi-turn *within* either agent's own history to continue — each agent gets a single `.run()` call built from the app's `conversation` array as plain text context, not a chain of prior `.run()` calls. `message_history` only earns its place once a single agent needs to remember its own prior structured turns across multiple calls (e.g., a future uncapped, multi-round Analysis Agent — see §8, "Beyond the MVP").
+
+This also sets a boundary worth keeping deliberately, not just for the MVP: the app's `conversation` array is the shared, PM-facing log that can cross agent boundaries (both Analysis and Documentation read it), while each agent's own internal `message_history` — if and when one is used — should stay scoped to that one agent. Analysis and Documentation have different system prompts and output types; feeding one agent's raw message history into another would hand it a "conversation" framed by an agent it isn't, rather than the plain facts the PM actually said.
+
 ### API Endpoints
 
 | Method | Path | Purpose |
@@ -300,3 +308,13 @@ Consulted by the Structuring Agent (to avoid proposing a feature that was alread
 From Phase 2 onward, the "one route calls one agent" MVP pattern gives way to agents handing structured output directly to the next agent — via PydanticAI's agent delegation (an agent invoking the next as a tool call) or a thin orchestrator function calling them in sequence. A rejection at any gate (Documentation's validation sub-capability, Architecture Decision) stops the chain there instead of continuing on to planning, artifact generation, or publishing, which means documents need an explicit **per-stage status** (e.g., `decomposed` → `validated` → `architecture-approved` → `implementation-planned` → `artifacts-generated` → `published`) rather than the MVP's single `status` field, so a PM can see exactly where each feature sits and where it stalled.
 
 The **Domain Knowledge Agent**, if and when adopted, is the one exception to this handoff chain: it doesn't sit at a stage or produce a status transition of its own. The Structuring and Architecture Decision Agents would call it as a tool mid-execution, the way any agent might call a function, and its answer just informs the output those two agents were already going to produce.
+
+### 8.12 Do We Need an Orchestrating Agent?
+
+No — normalizing one agent's JSON output into the next agent's expected input is a deterministic mapping problem, not a judgment call, so it doesn't need an LLM. Each handoff is: take a Pydantic model (e.g., `FeatureProposals` from Structuring) and produce the input another agent's `run()` call expects (e.g., a feature's `sections` for Architecture Decision) — a plain typed Python function does this correctly every time, with no latency, cost, or non-determinism added. Reaching for an agent here would mean paying an LLM call to do something a function already does exactly right.
+
+What actually does the "orchestrating" is two things, both already in this plan and both plain code:
+- The **per-stage status field** (§8.11) — the state machine that decides what happens next, based on what a document's status already is.
+- Small **typed adapter functions** (living in `storage.py` or a new `agents/adapters.py`) that translate one agent's stored output into the next agent's input shape.
+
+So the "thin orchestrator function" already mentioned in §8.11 is exactly right as stated — a function, not an agent. The one caveat: if a future phase needs a *judgment call* about sequencing (not just "is this document valid, yes/no" but something genuinely ambiguous), that's a case for extending an existing agent's job, not introducing a new orchestrating agent whose only role is data plumbing.
