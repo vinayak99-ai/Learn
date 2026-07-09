@@ -27,6 +27,29 @@ A deliberately small first build, staged as three milestones instead of one big 
 7. **Documentation Agent runs automatically once the loop ends** (checklist covered, or nothing was needed in the first place). It takes the full conversation and produces the finished product document as a set of sections, and posts a short confirmation message in the thread.
 8. **PM sees the result.** The synthesized document is shown alongside the chat thread and can be edited by hand. Done — that's the full MVP 1 loop.
 
+### Detailed Interaction Sequence (PM ↔ Backend ↔ Agents)
+
+The journey above is the PM-facing story; this is the same flow broken down by actor, showing exactly what fires on each turn and how the round-by-round loop (§4, "Standard Product Checklist") actually terminates.
+
+| # | Actor | Action |
+|---|---|---|
+| 1 | PM | Clicks "New Product," enters a title → `POST /products` |
+| 2 | Backend | Creates the product: `status: "input"`, empty `conversation`, `checklist_covered: []`, `questions_asked: 0` |
+| 3 | PM | Types the first description in the chat → `POST /products/{id}/messages` |
+| 4 | Backend | Appends the message to `conversation`; `questions_asked` is 0, so it's under the cap → calls the **Analysis Agent** |
+| 5 | Analysis Agent | Reads `conversation` + the product checklist + `checklist_covered`; returns `AnalysisResult{questions, done}` |
+| 6 | Backend | If `done: false` — merges newly-covered items into `checklist_covered`, adds `len(questions)` to `questions_asked`, stores the round in `pending_questions`, appends a plain-text version to `conversation`, keeps `status: "questions_pending"` |
+| 7 | Frontend | Renders `pending_questions` as up to 3 question cards, each with clickable option chips (if any) and a free-text fallback |
+| 8 | PM | Answers the round (clicks, types, or both) → `POST /products/{id}/messages` |
+| 9 | *(loop)* | Steps 4-8 repeat — each reply triggers another Analysis Agent call — until either `done: true` comes back, or step 4's cap check finds `questions_asked >= 30` |
+| 10 | Backend | Once the loop ends (either way): skips straight to calling the **Documentation Agent** with the full `conversation`, no further Analysis calls |
+| 11 | Documentation Agent | Returns `DocumentationDraft{sections}` |
+| 12 | Backend | Saves `sections`, sets `status: "synthesized"`, appends a short confirmation message to `conversation`, clears `pending_questions` |
+| 13 | Frontend | Renders the finished `sections` below the chat thread as editable cards |
+| 14 | PM | Reviews, edits by hand if needed → `PUT /products/{id}` |
+
+Two things worth noting from this breakdown: the loop (step 9) is driven entirely by the backend re-checking state on every single message, not by any agent remembering it's "mid-conversation" — each Analysis call in step 5 is a fresh, stateless `.run()` (§4, "Conversation State vs. Agent Message History"). And the Documentation Agent (step 10-11) only ever runs once per product in MVP 1, right after the loop's last message, regardless of how many rounds it took to get there.
+
 ---
 
 ## 2. Tech Stack
