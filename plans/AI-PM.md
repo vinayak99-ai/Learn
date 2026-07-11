@@ -400,3 +400,20 @@ What actually does the "orchestrating" is two things, both already in this plan 
 - Small **typed adapter functions** (living in `storage.py` or a new `agents/adapters.py`) that translate one agent's stored output into the next agent's input shape.
 
 So the "thin orchestrator function" already mentioned in §8.11 is exactly right as stated — a function, not an agent. The one caveat: if a future milestone needs a *judgment call* about sequencing (not just "is this document valid, yes/no" but something genuinely ambiguous), that's a case for extending an existing agent's job, not introducing a new orchestrating agent whose only role is data plumbing.
+
+---
+
+## 9. Reference Implementation: Alternative Single-Shot Design (Sample Code)
+
+**This is not the design of record.** Everything in §1-§8 above — the chat-style, checklist-driven, multi-round Analysis Agent and Documentation Agent, `data/products/*.json` persistence, and the 3-MVP agent roadmap — is what's actually being built. What follows is a different, self-contained sample implementation that was written independently, kept here for reference (working PydanticAI/FastAPI code patterns, an export layer, a framework comparison) rather than as something to build against. It diverges from the design of record in several structural ways worth flagging before reading it as anything but reference:
+
+- **Interaction model**: single-shot (`raw_notes` in, a complete PRD out in one call) rather than the chat-style, capped-loop intake in §1.
+- **Agents**: a two-stage `agent` (extraction) → `generation_agent` (generation) pair, not the Analysis/Documentation agents defined in §4 and §8.1-8.2.
+- **Persistence layout**: `~/pm-portal-data/projects/<id>/{meta.json, artifacts/, raw_inputs/}`, not `data/products/<id>.json`.
+- **New capability not elsewhere in this plan**: a Markdown/.docx/.csv export layer, including a JIRA-importable CSV bridge — worth considering as a real addition to the roadmap (it doesn't exist in §8's agent catalog today) rather than assuming it's already covered.
+- **Output document shape**: a `GeneratedPRD` with `user_stories` (INVEST-style, with acceptance criteria) baked directly into the top-level document, rather than a product's `sections: list[Section]` with feature/story generation split out into later-MVP agents (Structuring, Planning & Delivery).
+
+If any piece of this — the export layer in particular — is worth pulling into the actual roadmap, that should happen as a deliberate, reconciled addition to §8 (a new agent or sub-capability, with its own MVP placement and Input/Output/Triggered-by entry), not by treating this section as already-adopted scope.
+
+The full reference code (agents, export layer, persistence layer, FastAPI backend, React snippets, roadmap notes, and the PydanticAI-vs-LangGraph comparison) now lives in its own file rather than duplicated here: see **[`mvp-aipm.md`](./mvp-aipm.md)**.
+
