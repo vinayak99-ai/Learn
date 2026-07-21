@@ -160,17 +160,14 @@ Everyone makes mistakes. Everyone. Always.
 
 Think of mistakes like a GPS. When you take a wrong turn, the GPS does not say "You have failed, give up." It says "Recalculating… new route found." Be your own GPS.
 
----
-
-## Part 5: The Six-Step Evidence-Based Decision Making Model (EBMgt) 🔬
-
+### The Six-Step Evidence-Based Decision Making Model (EBMgt) 🔬
 This is a proven, research-backed method used by the world's best managers, doctors, scientists, and leaders. It works for any decision — from choosing a subject in school to dealing with a conflict with a friend.
 
-### The 6 Steps
+#### The 6 Steps
 
 ---
 
-#### Step 1: ASK
+##### Step 1: ASK
 What exactly do I need to decide, and what do I need to know?
 
 - Clearly define the problem or decision in one sentence.
@@ -181,7 +178,7 @@ Life tip: Many bad decisions happen because people solve the wrong problem. Take
 
 ---
 
-#### Step 2: ACQUIRE
+##### Step 2: ACQUIRE
 What information do I need, and where can I find it?
 
 - Gather facts, not just opinions.
@@ -193,7 +190,7 @@ Life tip: Do not rely on just one source. The more perspectives you gather, the 
 
 ---
 
-#### Step 3: APPRAISE
+##### Step 3: APPRAISE
 How reliable and relevant is this information?
 
 - Not all information is equal. Some sources are biased, outdated, or simply wrong.
@@ -205,7 +202,7 @@ Life tip: Critical thinking is your superpower. Question everything — includin
 
 ---
 
-#### Step 4: AGGREGATE
+##### Step 4: AGGREGATE
 Putting it all together — what does the full picture look like?
 
 - Weigh all the evidence you have gathered.
@@ -217,7 +214,7 @@ Life tip: Good decisions balance logic AND values. Neither alone is enough.
 
 ---
 
-#### Step 5: APPLY
+##### Step 5: APPLY
 Make the decision and act on it.
 
 - Choose the best option based on your evidence.
@@ -229,7 +226,7 @@ Life tip: Overthinking is the enemy of action. At some point, you must decide an
 
 ---
 
-#### Step 6: ASSESS
+##### Step 6: ASSESS
 How did it go? What did I learn?
 
 - After some time, review your decision.
@@ -241,7 +238,7 @@ Life tip: Every decision — good or bad — teaches you something. The people w
 
 ---
 
-### EBMgt at a Glance
+#### EBMgt at a Glance
 
 | Step | Question to Ask | What it builds in you |
 |------|-----------------|-----------------------|
@@ -254,7 +251,7 @@ Life tip: Every decision — good or bad — teaches you something. The people w
 
 ---
 
-## Part 6: Connecting It All — The Cycle of Life 🔁
+## Part 5: Connecting It All — The Cycle of Life 🔁
 
 Here is how everything in this guide connects:
 
@@ -269,7 +266,7 @@ Life is not a straight line. It is a spiral — you keep coming back to the same
 
 ---
 
-## Part 7: Family, Community, and Lifelong Learning 👨‍👩‍👧‍👦
+## Part 6: Family, Community, and Lifelong Learning 👨‍👩‍👧‍👦
 
 No one grows alone. The people around you — family, friends, mentors, teachers — are part of your growth story.
 
