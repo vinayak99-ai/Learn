@@ -5,7 +5,7 @@ Hey! Whether you're 15 or 50, life is a journey full of choices, mistakes, lesso
 
 ---
 
-## Part 1: Understanding Who You Are 🧠
+## Part 1: Who You Are — Drivers of Life 🧠
 
 ### What Drives You?
 Every person is driven by three powerful internal forces. These are not good or bad — they just are. Understanding them is the first step to growing as a person.
@@ -273,7 +273,55 @@ Life tip: Every decision — good or bad — teaches you something. The people w
 
 ---
 
-## Part 5: Connecting It All — The Cycle of Life 🔁
+## Part 5: Design Thinking — Solving Life Problems by Design 🧭
+
+Part 4 gave you a model for decisions where you can gather evidence and weigh it — EBMgt. But some of life's hardest problems are not decisions you can research your way through. They are fuzzy: you don't yet know what "good" even looks like, and no amount of thinking will tell you. Career direction, relationship friction, how you actually want to spend your time — these need to be **designed**, not just decided. Design thinking is a structured, repeatable way to work through exactly that kind of problem.
+
+### The Five Stages Applied to Life Situations
+
+The stages are not linear — you will loop back to an earlier one after a failed test, and that is the process working, not failing.
+
+1. **Empathize** — Understand the real problem underneath the surface complaint, including your own hidden needs.
+   - *"I'm always tired"* might not be a sleep problem. Sit with it before diagnosing: is it sleep, boredom, or dread about tomorrow? Empathizing with yourself means observing without judging first.
+   - A recurring fight about chores might really be about feeling unappreciated, not about the dishes.
+
+2. **Define** — Turn the fuzzy feeling into a sharp, specific problem statement.
+   - Not "I hate my job" but "I lose energy in meetings where I have no decision-making power, and that is most of my week."
+   - Not "we keep fighting" but "we default to blame in the first 60 seconds of any disagreement, before either of us has said what we actually need."
+
+3. **Ideate** — Generate many possible responses, deliberately including "bad" or unconventional ones, before picking one.
+   - For the job example: changing roles internally, negotiating more autonomy, building a side project, changing industries, or reframing what "meaningful work" means to you — list 8–10 before judging any of them.
+   - Rule: quantity before quality. Judging an idea too early kills options that might have led somewhere useful.
+
+4. **Prototype** — Build the smallest possible test of an idea, cheap enough to be wrong.
+   - Instead of quitting your job to "find yourself," spend one weekend shadowing or informally talking to someone in the field you're curious about — a prototype of a career change, not the change itself.
+   - Instead of resolving to "exercise every day," prototype a specific 20-minute routine for two weeks.
+
+5. **Test** — Run the prototype, gather honest signal, and loop back.
+   - After the two-week exercise prototype: did energy improve? Did you actually do it? What got in the way? Adjust and re-prototype — do not declare final success or failure from one data point.
+   - This is the same muscle as EBMgt's **Assess** step: look honestly at what happened and let it inform the next round.
+
+### Principles That Make This Different From Ordinary Planning
+
+- **Bias Toward Action** — A rough prototype tested this week beats a perfect plan debated for a month. Do not spend three months "researching" whether to start running; go for one run this week and see how your body actually responds.
+- **Reframing the Problem** — The way you have stated a problem often hides an assumption that, once questioned, dissolves the problem. "How do I find more time?" can reframe into "What am I protecting by staying busy?"
+- **Iteration Through Action** — You do not think your way to clarity; you act your way to it. Each small experiment produces information no amount of pure reflection could — then you adjust and go again. This is the same spirit as the GPS metaphor in Part 4: recalculating is iteration, not failure.
+
+### Designing Your Life — Applying This Daily
+
+Drawing on the *Designing Your Life* approach (Bill Burnett & Dave Evans):
+
+- **Gravity Problems vs. Actionable Problems** — Some things are not solvable, only designable around: a chronic health condition, a family member's personality, a past decision that cannot be undone. Naming a problem as "gravity" frees the energy you were wasting trying to fix the unfixable, so it can go toward what you can actually design.
+- **Energy and Engagement Tracking** — For one to two weeks, jot down when you felt energized or engaged, and when you felt drained or flat. This is empathy research on your own life — you cannot design around your real needs until you have actually observed them, not assumed them.
+- **Prototype Your Days, Not Your Life** — Do not commit to a whole new identity ("I'm a morning person now"). Run a 3–7 day trial of one specific change — wake time, no-phone first hour, a single new habit — and treat it as an experiment with a result, not a promise you kept or broke.
+- **Odyssey Planning** — Sketch two or three different plausible versions of what the next year (or five years) could look like, not just the default path you are already on. Even if you never choose an alternate plan, seeing it written down reveals what you actually value.
+- **Weekly Design Review** — A short recurring check-in: What worked this week? What drained me? What is my next small prototype? Pair this with the "Score Yourself" table in Part 2 and the "Assess" step in Part 4 so all three reflection habits run on the same cadence and reinforce each other.
+
+Life tip: design thinking will not hand you the perfect life plan. What it gives you is a repeatable way to move from a stuck, fuzzy problem toward a concrete next action — every time, for the rest of your life.
+
+---
+
+## Part 6: Connecting It All — The Cycle of Life 🔁
 
 Here is how everything in this guide connects:
 
@@ -281,6 +329,7 @@ Self-Awareness (Ego, Belief, Fear)
   leads to Good Character (HEXACO Traits)
   leads to Conscious Daily Living (Six Pillars)
   leads to Smart Decision Making (EBMgt Six Steps)
+  leads to Designing Your Life (Design Thinking Loop)
   leads to Mistakes, then Reflect, Learn, and Grow
   leads back to Better Self-Awareness
 
@@ -288,7 +337,7 @@ Life is not a straight line. It is a spiral — you keep coming back to the same
 
 ---
 
-## Part 6: Family, Community, and Lifelong Learning 👨‍👩‍👧‍👦
+## Part 7: Family, Community, and Lifelong Learning 👨‍👩‍👧‍👦
 
 No one grows alone. The people around you — family, friends, mentors, teachers — are part of your growth story.
 
@@ -308,7 +357,8 @@ Here is what to remember:
 2. **Your personality** has six dimensions (HEXACO) — all of them can be strengthened with practice.
 3. **How you live daily** matters — energy, goals, priorities, planning, focus, and adaptability are your tools.
 4. **Every decision counts** — use the EBMgt six-step model to make better ones.
-5. **Mistakes are not failures** — they are feedback. Acknowledge, fix, learn, grow.
-6. **Life is a cycle** — self-awareness leads to better decisions, which leads to growth, which deepens self-awareness.
+5. **Design your life, do not just decide it** — use the five stages of design thinking for the fuzzy problems no amount of research can resolve.
+6. **Mistakes are not failures** — they are feedback. Acknowledge, fix, learn, grow.
+7. **Life is a cycle** — self-awareness leads to better decisions, which leads to growth, which deepens self-awareness.
 
 You do not need to have it all figured out. You just need to keep going, keep learning, and keep growing.
