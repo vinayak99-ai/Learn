@@ -66,20 +66,6 @@ Use this once a month, or whenever you want a check-in, to see where you actuall
 
 **Note on Emotionality:** this is the one trait where 5 is not the goal. A 5 signals high anxiety and emotional dependency; a 1 signals detachment and numbness. A 3 — the resilient, regulated middle — is what you are aiming for.
 
-**Reflection questions**, one per trait, to help you land on an honest number rather than a gut guess:
-- **H**: This month, did I take credit I did not fully earn, or was I straightforward even when it was inconvenient?
-- **E**: This month, how often did a feeling take over a decision, versus me naming it and choosing my response?
-- **X**: This month, did I engage when it mattered, or did I hold back — or overextend myself?
-- **A**: This month, did I let go of a grudge, or am I still carrying one?
-- **C**: This month, what share of my commitments did I actually follow through on?
-- **O**: This month, what is one new thing I tried?
-
-**Track it over time:**
-
-| Date | H | E | X | A | C | O | Notes |
-|------|---|---|---|---|---|---|-------|
-|      |   |   |   |   |   |   |       |
-
 ### How to Build These Traits
 These traits are not fixed. You can grow them with daily practice — start small, be consistent, and notice how it changes the way you show up for others and yourself.
 
@@ -145,9 +131,9 @@ Knowing who you are is great — but how you live every day matters just as much
 
 ---
 
-## Part 4: Decision Making — The Most Important Life Skill 🎯
+## Part 4: Decision Making — A Design Thinking Approach to Life 🧭
 
-Here is the truth: life is a series of decisions. Some are small (what to eat for lunch), some are huge (which career to pursue, how to treat people). Good decision making is a skill — and like all skills, it can be learned and improved.
+Here is the truth: life is a series of decisions and problems. Some are clean enough to research your way through. Most are fuzzy: you do not yet know what "good" even looks like, and no amount of thinking alone will tell you — career direction, relationship friction, how you actually want to spend your time. This part gives you one comprehensive process for both kinds, built on design thinking, and built to be **action-oriented** (get moving quickly and cheaply) and **feedback-oriented** (treat every result as data, not a verdict).
 
 ### Why Every Daily Decision Matters
 Most decisions do not feel life-changing in the moment — what time you wake up, whether you finish what you started, how you speak to someone who annoyed you, whether you open the book or the phone. But decisions do not exist in isolation. They compound.
@@ -182,130 +168,38 @@ Everyone makes mistakes. Everyone. Always.
 
 Think of mistakes like a GPS. When you take a wrong turn, the GPS does not say "You have failed, give up." It says "Recalculating… new route found." Be your own GPS.
 
-### The Six-Step Evidence-Based Decision Making Model (EBMgt) 🔬
-This is a proven, research-backed method used by the world's best managers, doctors, scientists, and leaders. It works for any decision — from choosing a subject in school to dealing with a conflict with a friend.
+### The Five-Stage Process: How to Actually Work Through a Problem
+This is a structured, repeatable way to move through any problem — small and clean, or big and fuzzy. The stages are not linear — you will loop back to an earlier one after a failed test, and that is the process working, not failing.
 
-#### The 6 Steps
-
----
-
-##### Step 1: ASK
-What exactly do I need to decide, and what do I need to know?
-
-- Clearly define the problem or decision in one sentence.
-- Ask yourself: What is the real question here?
-- Example: "Should I quit this activity I have been doing for 2 years, even though I no longer enjoy it?"
-
-Life tip: Many bad decisions happen because people solve the wrong problem. Take time to ask the right question first.
-
----
-
-##### Step 2: ACQUIRE
-What information do I need, and where can I find it?
-
-- Gather facts, not just opinions.
-- Talk to people who have faced similar situations.
-- Research, read, observe, and listen.
-- Example: Talk to people who quit a similar activity — what happened? Talk to those who stayed — what happened?
-
-Life tip: Do not rely on just one source. The more perspectives you gather, the clearer the picture becomes.
-
----
-
-##### Step 3: APPRAISE
-How reliable and relevant is this information?
-
-- Not all information is equal. Some sources are biased, outdated, or simply wrong.
-- Ask: Who said this? Why did they say it? Does it apply to my situation?
-- Separate facts from opinions from emotions.
-- Example: "My friend says I should quit because they quit. But their reasons were different from mine."
-
-Life tip: Critical thinking is your superpower. Question everything — including your own assumptions.
-
----
-
-##### Step 4: AGGREGATE
-Putting it all together — what does the full picture look like?
-
-- Weigh all the evidence you have gathered.
-- Consider the pros and cons.
-- Factor in your values, your goals, and the impact on others.
-- Example: "The evidence shows I have lost passion, but I have also built great friendships through this activity. Both matter."
-
-Life tip: Good decisions balance logic AND values. Neither alone is enough.
-
----
-
-##### Step 5: APPLY
-Make the decision and act on it.
-
-- Choose the best option based on your evidence.
-- Commit to it fully. Half-hearted decisions produce half-hearted results.
-- Accept that there may not be a perfect answer — a good decision made confidently beats a perfect decision never made.
-- Example: "I will give it three more months with a new goal. If I still feel the same, I will move on."
-
-Life tip: Overthinking is the enemy of action. At some point, you must decide and move.
-
----
-
-##### Step 6: ASSESS
-How did it go? What did I learn?
-
-- After some time, review your decision.
-- Ask: Did it work? Why or why not? What would I do differently?
-- This is where mistakes become your greatest teachers.
-- Example: "After three months, I feel more engaged. The decision to stay paid off — but I also set better boundaries."
-
-Life tip: Every decision — good or bad — teaches you something. The people who grow fastest are the ones who reflect the most.
-
----
-
-#### EBMgt at a Glance
-
-| Step | Question to Ask | What it builds in you |
-|------|-----------------|-----------------------|
-| Ask | What is the real problem? | Clarity and self-awareness |
-| Acquire | What do I know? What do I need to know? | Curiosity and research skills |
-| Appraise | Is this information reliable? | Critical thinking |
-| Aggregate | What does the full picture say? | Judgment and balance |
-| Apply | What will I do? | Courage and commitment |
-| Assess | What did I learn? | Wisdom and growth mindset |
-
----
-
-## Part 5: Design Thinking — Solving Life Problems by Design 🧭
-
-Part 4 gave you a model for decisions where you can gather evidence and weigh it — EBMgt. But some of life's hardest problems are not decisions you can research your way through. They are fuzzy: you don't yet know what "good" even looks like, and no amount of thinking will tell you. Career direction, relationship friction, how you actually want to spend your time — these need to be **designed**, not just decided. Design thinking is a structured, repeatable way to work through exactly that kind of problem.
-
-### The Five Stages Applied to Life Situations
-
-The stages are not linear — you will loop back to an earlier one after a failed test, and that is the process working, not failing.
-
-1. **Empathize** — Understand the real problem underneath the surface complaint, including your own hidden needs.
+1. **Empathize** — Understand the real problem underneath the surface complaint, including your own hidden needs. This is also where you gather real information instead of guessing: talk to people who have faced something similar, research, read, observe, listen. Do not rely on just one source — the more perspectives you gather, the clearer the picture becomes.
    - *"I'm always tired"* might not be a sleep problem. Sit with it before diagnosing: is it sleep, boredom, or dread about tomorrow? Empathizing with yourself means observing without judging first.
    - A recurring fight about chores might really be about feeling unappreciated, not about the dishes.
+   - Before deciding whether to quit a two-year hobby you no longer enjoy, talk to people who quit something similar — what happened? Talk to people who stayed — what happened?
 
-2. **Define** — Turn the fuzzy feeling into a sharp, specific problem statement.
+2. **Define** — Turn the fuzzy feeling into one sharp, specific problem statement. Ask yourself: what is the real question here? Many bad decisions happen because people solve the wrong problem — take the time to ask the right one first.
    - Not "I hate my job" but "I lose energy in meetings where I have no decision-making power, and that is most of my week."
    - Not "we keep fighting" but "we default to blame in the first 60 seconds of any disagreement, before either of us has said what we actually need."
 
-3. **Ideate** — Generate many possible responses, deliberately including "bad" or unconventional ones, before picking one.
+3. **Ideate** — Generate many possible responses, deliberately including "bad" or unconventional ones, before picking one. This is also where you appraise what you gathered in step 1: not all information is equal — some sources are biased, outdated, or simply wrong, so separate facts from opinions from emotions. Then weigh the full picture: consider the pros and cons, and factor in your values and goals, not just the evidence.
    - For the job example: changing roles internally, negotiating more autonomy, building a side project, changing industries, or reframing what "meaningful work" means to you — list 8–10 before judging any of them.
-   - Rule: quantity before quality. Judging an idea too early kills options that might have led somewhere useful.
+   - "My friend says I should quit because they quit. But their reasons were different from mine" — question the source, not just the advice.
+   - Rule: quantity before quality. Judging an idea too early kills options that might have led somewhere useful. Good decisions balance logic **and** values — neither alone is enough.
 
-4. **Prototype** — Build the smallest possible test of an idea, cheap enough to be wrong.
+4. **Prototype** — Build the smallest possible test of an idea, cheap enough to be wrong. When you do commit to a version, commit fully — half-hearted attempts produce half-hearted results, and a good decision made confidently beats a perfect decision never made.
    - Instead of quitting your job to "find yourself," spend one weekend shadowing or informally talking to someone in the field you're curious about — a prototype of a career change, not the change itself.
    - Instead of resolving to "exercise every day," prototype a specific 20-minute routine for two weeks.
+   - "I will give this activity three more months with a new goal. If I still feel the same, I will move on" — a committed, time-boxed prototype, not an open-ended maybe.
 
-5. **Test** — Run the prototype, gather honest signal, and loop back.
+5. **Test** — Run the prototype, gather honest signal, and loop back. Ask: did it work? Why or why not? What would I do differently? This is where mistakes become your greatest teachers — every result, good or bad, teaches you something, and the people who grow fastest are the ones who reflect the most.
    - After the two-week exercise prototype: did energy improve? Did you actually do it? What got in the way? Adjust and re-prototype — do not declare final success or failure from one data point.
-   - This is the same muscle as EBMgt's **Assess** step: look honestly at what happened and let it inform the next round.
+   - "After three months, I feel more engaged. Staying paid off — but I also set better boundaries" — the test both confirms the decision and refines it.
 
-### Principles That Make This Different From Ordinary Planning
+### Principles: Action-Oriented, Feedback-Oriented, Always Reframing
+These three habits are what make this a design process instead of just a mental exercise — they are why the five stages above actually work in practice, not just on paper:
 
-- **Bias Toward Action** — A rough prototype tested this week beats a perfect plan debated for a month. Do not spend three months "researching" whether to start running; go for one run this week and see how your body actually responds.
+- **Bias Toward Action** — A rough prototype tested this week beats a perfect plan debated for a month. Overthinking is the enemy of action. Do not spend three months "researching" whether to start running; go for one run this week and see how your body actually responds.
+- **Feedback Over Verdict (Iteration Through Action)** — You do not think your way to clarity; you act your way to it. Each small experiment produces information no amount of pure reflection could — then you adjust and go again. Think of it like a GPS: when you take a wrong turn, it does not say "you have failed, give up," it says "recalculating — new route found." Be your own GPS.
 - **Reframing the Problem** — The way you have stated a problem often hides an assumption that, once questioned, dissolves the problem. "How do I find more time?" can reframe into "What am I protecting by staying busy?"
-- **Iteration Through Action** — You do not think your way to clarity; you act your way to it. Each small experiment produces information no amount of pure reflection could — then you adjust and go again. This is the same spirit as the GPS metaphor in Part 4: recalculating is iteration, not failure.
 
 ### Designing Your Life — Applying This Daily
 
@@ -315,21 +209,30 @@ Drawing on the *Designing Your Life* approach (Bill Burnett & Dave Evans):
 - **Energy and Engagement Tracking** — For one to two weeks, jot down when you felt energized or engaged, and when you felt drained or flat. This is empathy research on your own life — you cannot design around your real needs until you have actually observed them, not assumed them.
 - **Prototype Your Days, Not Your Life** — Do not commit to a whole new identity ("I'm a morning person now"). Run a 3–7 day trial of one specific change — wake time, no-phone first hour, a single new habit — and treat it as an experiment with a result, not a promise you kept or broke.
 - **Odyssey Planning** — Sketch two or three different plausible versions of what the next year (or five years) could look like, not just the default path you are already on. Even if you never choose an alternate plan, seeing it written down reveals what you actually value.
-- **Weekly Design Review** — A short recurring check-in: What worked this week? What drained me? What is my next small prototype? Pair this with the "Score Yourself" table in Part 2 and the "Assess" step in Part 4 so all three reflection habits run on the same cadence and reinforce each other.
+- **Weekly Design Review** — A short recurring check-in: What worked this week? What drained me? What is my next small prototype? Pair this with the "Score Yourself" table in Part 2 and the Test stage above so all three reflection habits run on the same cadence and reinforce each other.
 
-Life tip: design thinking will not hand you the perfect life plan. What it gives you is a repeatable way to move from a stuck, fuzzy problem toward a concrete next action — every time, for the rest of your life.
+Life tip: this process will not hand you the perfect life plan. What it gives you is a repeatable way to move from a stuck, fuzzy problem toward a concrete next action — every time, for the rest of your life.
+
+### Quick Reference: The Five Stages at a Glance
+
+| Stage | Question to Ask | What It Builds |
+|-------|------------------|-----------------|
+| Empathize | What is really going on — for me, and for anyone else involved? | Curiosity, clarity, self-awareness |
+| Define | What is the one sharp problem I am actually solving? | Focus |
+| Ideate | What are 8–10 different ways I could respond — good, bad, and unconventional? | Judgment and creativity |
+| Prototype | What is the smallest, cheapest version of this I can try this week? | Courage and commitment |
+| Test | What actually happened, and what does it tell me to do next? | Wisdom and a growth mindset |
 
 ---
 
-## Part 6: Connecting It All — The Cycle of Life 🔁
+## Part 5: Connecting It All — The Cycle of Life 🔁
 
 Here is how everything in this guide connects:
 
 Self-Awareness (Ego, Belief, Fear)
   leads to Good Character (HEXACO Traits)
   leads to Conscious Daily Living (Six Pillars)
-  leads to Smart Decision Making (EBMgt Six Steps)
-  leads to Designing Your Life (Design Thinking Loop)
+  leads to Smart Decision Making (Five-Stage Design Thinking Loop)
   leads to Mistakes, then Reflect, Learn, and Grow
   leads back to Better Self-Awareness
 
@@ -337,7 +240,7 @@ Life is not a straight line. It is a spiral — you keep coming back to the same
 
 ---
 
-## Part 7: Family, Community, and Lifelong Learning 👨‍👩‍👧‍👦
+## Part 6: Family, Community, and Lifelong Learning 👨‍👩‍👧‍👦
 
 No one grows alone. The people around you — family, friends, mentors, teachers — are part of your growth story.
 
@@ -356,9 +259,8 @@ Here is what to remember:
 1. **You are driven** by ego, belief, and fear — understand them, do not be controlled by them.
 2. **Your personality** has six dimensions (HEXACO) — all of them can be strengthened with practice.
 3. **How you live daily** matters — energy, goals, priorities, planning, focus, and adaptability are your tools.
-4. **Every decision counts** — use the EBMgt six-step model to make better ones.
-5. **Design your life, do not just decide it** — use the five stages of design thinking for the fuzzy problems no amount of research can resolve.
-6. **Mistakes are not failures** — they are feedback. Acknowledge, fix, learn, grow.
-7. **Life is a cycle** — self-awareness leads to better decisions, which leads to growth, which deepens self-awareness.
+4. **Every decision counts** — design your way through it with the five stages: Empathize, Define, Ideate, Prototype, Test. Be action-oriented, be feedback-oriented, and keep reframing the problem.
+5. **Mistakes are not failures** — they are feedback. Acknowledge, fix, learn, grow.
+6. **Life is a cycle** — self-awareness leads to better decisions, which leads to growth, which deepens self-awareness.
 
 You do not need to have it all figured out. You just need to keep going, keep learning, and keep growing.
